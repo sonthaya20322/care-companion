@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { useState } from "react";
 import { AreaSelect } from "@/components/companions/AreaSelect";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea, describedBy } from "@/components/ui/Field";
@@ -14,6 +14,7 @@ import {
   durationOptions,
 } from "@/lib/domain/booking-form";
 import { errorMessages } from "@/lib/domain/errors";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import type { ErrandType, ProvinceWithDistricts } from "@/lib/services/catalog";
 import { formatClock, formatDateTime, formatHours } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -42,9 +43,7 @@ export function BookingForm({
   earliestStartIso,
   defaultStart,
 }: BookingFormProps) {
-  const [state, formAction] = useActionState<BookingFormState, FormData>(createBooking, {});
-  const [pending, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
+  const { state, formAction, pending, formRef, handleSubmit } = useActionForm<BookingFormState>(createBooking, {});
   const values = state.values ?? {};
   const [edited, setEdited] = useState<string[]>([]);
   const [seenState, setSeenState] = useState(state);
@@ -65,22 +64,6 @@ export function BookingForm({
   const startsAt = bangkokLocalToDate(date, time);
   const referenceNow = new Date(earliest.getTime() - bookingRules.minLeadHours * 60 * 60 * 1000);
   const startProblem = startsAt ? checkStart(startsAt, referenceNow) : null;
-
-  // Submitting through a transition (instead of the native form action) stops React from resetting
-  // the form, so selects like duration and pickup district keep what the user picked.
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => formAction(formData));
-  }
-
-  useEffect(() => {
-    const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"], [data-error-anchor]');
-    if (!target) return;
-    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    target.scrollIntoView({ block: "center", behavior: smooth ? "smooth" : "auto" });
-    target.focus({ preventScroll: true });
-  }, [state]);
 
   function pickEarliest() {
     setDate(bangkokDateString(earliest));

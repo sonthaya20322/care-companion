@@ -6,7 +6,7 @@ import { ContactForm } from "@/components/account/ContactForm";
 import { PageHeading } from "@/components/area/AreaShell";
 import { Card } from "@/components/ui/Card";
 import { StatusStamp } from "@/components/ui/StatusStamp";
-import { verificationMeta } from "@/lib/domain/companion";
+import { serviceAreaRequired, verificationMeta } from "@/lib/domain/companion";
 import { getLocations } from "@/lib/services/catalog";
 import { getMyAvailability, getMyCompanionProfile, getMyServiceAreaIds } from "@/lib/services/companion-self";
 import { requireRole } from "@/lib/services/guard";
@@ -62,7 +62,11 @@ export default async function CompanionProfilePage() {
           <DetailsForm profile={companion} />
         </Section>
         <Section title="พื้นที่ให้บริการ" description="เลือกเขตที่รับผู้ใช้บริการได้ คำขอเปิดในเขตเหล่านี้จะแสดงให้คุณเห็น">
-          <AreasForm locations={locations} selected={areaIds} />
+          <AreasForm
+            locations={locations}
+            selected={areaIds}
+            required={serviceAreaRequired(companion.verification_status)}
+          />
         </Section>
         <Section title="ช่วงเวลาที่สะดวก" description="ผู้ใช้บริการจะเห็นตารางนี้ในหน้าโปรไฟล์ของคุณ">
           <AvailabilityForm slots={slots} />

@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
 import { saveErrandType } from "@/app/admin/actions";
 import { Field, Input, describedBy } from "@/components/ui/Field";
 import { FormStatus } from "@/components/ui/FormStatus";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import type { ActionState } from "@/lib/services/action-helpers";
 import type { ErrandType } from "@/lib/services/catalog";
 
 export function ErrandTypeForm({ errand, nextSortOrder = 0 }: { errand?: ErrandType; nextSortOrder?: number }) {
-  const [state, formAction] = useActionState<ActionState, FormData>(saveErrandType, {});
+  const { state, formAction, pending, formRef, handleSubmit } = useActionForm<ActionState>(saveErrandType, {}, {
+    resetOnSuccess: !errand,
+  });
   const errors = state.fieldErrors ?? {};
   const prefix = errand ? `errand-${errand.id}` : "errand-new";
   const field = (name: string) => ({
@@ -20,7 +22,7 @@ export function ErrandTypeForm({ errand, nextSortOrder = 0 }: { errand?: ErrandT
   });
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-4">
       {errand && <input type="hidden" name="id" value={errand.id} />}
       <div className="grid gap-4 sm:grid-cols-[1fr_12rem_7rem]">
         <Field id={`${prefix}-name_th`} label="ชื่อที่แสดง" error={errors.name_th} required>
@@ -53,7 +55,9 @@ export function ErrandTypeForm({ errand, nextSortOrder = 0 }: { errand?: ErrandT
           />
           เปิดให้ลูกค้าเลือก
         </label>
-        <SubmitButton pendingLabel="กำลังบันทึก...">{errand ? "บันทึก" : "เพิ่มประเภทธุระ"}</SubmitButton>
+        <SubmitButton pending={pending} pendingLabel="กำลังบันทึก...">
+          {errand ? "บันทึก" : "เพิ่มประเภทธุระ"}
+        </SubmitButton>
       </div>
       <FormStatus ok={state.ok} message={state.message} />
     </form>

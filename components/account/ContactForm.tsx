@@ -1,18 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
 import { updateContact } from "@/app/account/actions";
 import { Field, Input, describedBy } from "@/components/ui/Field";
 import { FormStatus } from "@/components/ui/FormStatus";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import type { ActionState } from "@/lib/services/action-helpers";
 
 export function ContactForm({ fullName, phone, email }: { fullName: string; phone: string | null; email: string }) {
-  const [state, formAction] = useActionState<ActionState, FormData>(updateContact, {});
+  const { state, formAction, pending, formRef, handleSubmit } = useActionForm<ActionState>(updateContact, {});
   const errors = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="flex flex-col gap-5" noValidate>
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <Field id="email" label="อีเมล (จาก Google)" hint="เปลี่ยนไม่ได้">
         <Input id="email" value={email} disabled readOnly aria-describedby="email-hint" />
       </Field>
@@ -41,7 +41,9 @@ export function ContactForm({ fullName, phone, email }: { fullName: string; phon
         />
       </Field>
       <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton pendingLabel="กำลังบันทึก...">บันทึกข้อมูลติดต่อ</SubmitButton>
+        <SubmitButton pending={pending} pendingLabel="กำลังบันทึก...">
+          บันทึกข้อมูลติดต่อ
+        </SubmitButton>
         <FormStatus ok={state.ok} message={state.message} />
       </div>
     </form>

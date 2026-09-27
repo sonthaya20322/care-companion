@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
 import { FormStatus } from "@/components/ui/FormStatus";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import type { ActionState } from "@/lib/services/action-helpers";
 import type { AvailabilitySlot } from "@/lib/services/companions";
 import { dayNames, formatTime } from "@/lib/utils/format";
@@ -13,17 +13,18 @@ const timeInput =
 
 /** One time range per weekday keeps the form simple for everyone. */
 export function AvailabilityForm({ slots }: { slots: AvailabilitySlot[] }) {
-  const [state, formAction] = useActionState<ActionState, FormData>(saveAvailability, {});
+  const { state, formAction, pending, formRef, handleSubmit } = useActionForm<ActionState>(saveAvailability, {});
   const errors = state.fieldErrors ?? {};
   const byDay = new Map(slots.map((slot) => [slot.day_of_week, slot]));
   const order = [1, 2, 3, 4, 5, 6, 0];
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-5">
       <ul className="flex flex-col divide-y divide-washi-line rounded-card ring-1 ring-washi-line">
         {order.map((day) => {
           const slot = byDay.get(day);
           const errorId = `day-${day}-error`;
+          const invalid = Boolean(errors[`day-${day}`]);
           return (
             <li key={day} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
               <label className="flex min-h-12 w-36 cursor-pointer items-center gap-3">
@@ -41,7 +42,8 @@ export function AvailabilityForm({ slots }: { slots: AvailabilitySlot[] }) {
                   step={1800}
                   defaultValue={slot ? formatTime(slot.start_time) : "08:00"}
                   className={timeInput}
-                  aria-describedby={errors[`day-${day}`] ? errorId : undefined}
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? errorId : undefined}
                 />
                 <span aria-hidden className="text-sumi-soft">
                   ถึง
@@ -56,10 +58,11 @@ export function AvailabilityForm({ slots }: { slots: AvailabilitySlot[] }) {
                   step={1800}
                   defaultValue={slot ? formatTime(slot.end_time) : "17:00"}
                   className={timeInput}
-                  aria-describedby={errors[`day-${day}`] ? errorId : undefined}
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? errorId : undefined}
                 />
               </div>
-              {errors[`day-${day}`] && (
+              {invalid && (
                 <p id={errorId} role="alert" className="w-full text-sm font-medium text-beni">
                   {errors[`day-${day}`]}
                 </p>
@@ -69,7 +72,9 @@ export function AvailabilityForm({ slots }: { slots: AvailabilitySlot[] }) {
         })}
       </ul>
       <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton pendingLabel="กำลังบันทึก...">บันทึกช่วงเวลา</SubmitButton>
+        <SubmitButton pending={pending} pendingLabel="กำลังบันทึก...">
+          บันทึกช่วงเวลา
+        </SubmitButton>
         <FormStatus ok={state.ok} message={state.message} />
       </div>
     </form>

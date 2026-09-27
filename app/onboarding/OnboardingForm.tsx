@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
 import { Field, Input, describedBy } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import { cn } from "@/lib/utils/cn";
 import { completeOnboarding, type OnboardingState } from "./actions";
 
@@ -20,14 +20,14 @@ const roleOptions = [
 ] as const;
 
 export function OnboardingForm({ defaultName }: { defaultName: string }) {
-  const [state, formAction] = useActionState<OnboardingState, FormData>(completeOnboarding, {});
+  const { state, formAction, pending, formRef, handleSubmit } = useActionForm<OnboardingState>(completeOnboarding, {});
   const values = state.values ?? {};
   const errors = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="flex flex-col gap-8" noValidate>
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-8" noValidate>
       {state.message && (
-        <p role="alert" className="rounded-control bg-beni-bg px-4 py-3 font-medium text-beni">
+        <p role="alert" tabIndex={-1} data-error-anchor className="rounded-control bg-beni-bg px-4 py-3 font-medium text-beni">
           {state.message}
         </p>
       )}
@@ -53,6 +53,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
                 name="role"
                 value={option.value}
                 defaultChecked={values.role === option.value}
+                data-error-anchor={errors.role && option.value === "customer" ? "" : undefined}
                 className="peer sr-only"
                 required
               />
@@ -112,7 +113,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
         />
       </Field>
 
-      <SubmitButton size="lg" pendingLabel="กำลังบันทึก...">
+      <SubmitButton pending={pending} size="lg" pendingLabel="กำลังบันทึก...">
         เริ่มใช้งาน
       </SubmitButton>
     </form>

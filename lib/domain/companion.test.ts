@@ -4,9 +4,22 @@ import {
   canSubmitVerification,
   companionProfileSchema,
   parseTags,
+  serviceAreaRequired,
   serviceAreasSchema,
   verificationChecklist,
 } from "./companion";
+
+describe("serviceAreaRequired", () => {
+  it("กันผู้ช่วยที่แสดงในหน้าค้นหาหรือรอตรวจ ไม่ให้เหลือ 0 เขต", () => {
+    expect(serviceAreaRequired("approved")).toBe(true);
+    expect(serviceAreaRequired("pending")).toBe(true);
+  });
+
+  it("ผู้ช่วยที่ยังไม่ส่งตรวจหรือไม่ผ่าน ล้างพื้นที่ได้", () => {
+    expect(serviceAreaRequired("draft")).toBe(false);
+    expect(serviceAreaRequired("rejected")).toBe(false);
+  });
+});
 
 const validProfile = {
   bio: "ใจเย็น เคยดูแลคุณยายที่บ้าน พาไปโรงพยาบาลประจำ",

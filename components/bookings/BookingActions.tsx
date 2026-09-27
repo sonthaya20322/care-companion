@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState, type FormEvent } from "react";
 import { bookingAction } from "@/app/bookings/actions";
 import { Button } from "@/components/ui/Button";
 import { Field, Textarea } from "@/components/ui/Field";
@@ -8,6 +8,7 @@ import { FormStatus } from "@/components/ui/FormStatus";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { BookingAction } from "@/lib/domain/booking";
 import type { UserRole } from "@/lib/domain/roles";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import type { ActionState } from "@/lib/services/action-helpers";
 import { cn } from "@/lib/utils/cn";
 
@@ -18,7 +19,8 @@ type Props = {
 };
 
 export function BookingActions({ bookingId, actions, viewerRole }: Props) {
-  const [state, formAction] = useActionState<ActionState, FormData>(bookingAction, {});
+  // Forms with typed text submit through handleSubmit so a rejected submit keeps the text.
+  const { state, formAction, pending, handleSubmit } = useActionForm<ActionState>(bookingAction, {});
   const [toggled, setOpen] = useState<"cancel" | "reject" | null>(null);
   const open = toggled && actions.includes(toggled) ? toggled : null;
 
@@ -82,6 +84,7 @@ export function BookingActions({ bookingId, actions, viewerRole }: Props) {
       {open && (
         <form
           action={formAction}
+          onSubmit={handleSubmit}
           className={cn("animate-rise flex flex-col gap-4 rounded-card p-5", open === "cancel" ? "bg-beni-bg" : "bg-washi")}
         >
           {hidden(open)}
@@ -94,7 +97,7 @@ export function BookingActions({ bookingId, actions, viewerRole }: Props) {
             <Textarea id={`${open}-note`} name="note" rows={2} maxLength={500} required={open === "cancel" && reasonRequired} />
           </Field>
           <div className="flex flex-wrap gap-3">
-            <SubmitButton variant={open === "cancel" ? "danger" : "secondary"} pendingLabel="กำลังบันทึก...">
+            <SubmitButton pending={pending} variant={open === "cancel" ? "danger" : "secondary"} pendingLabel="กำลังบันทึก...">
               {open === "cancel" ? "ยืนยันการยกเลิก" : "ยืนยันการปฏิเสธ"}
             </SubmitButton>
             <Button variant="ghost" onClick={() => setOpen(null)}>
@@ -104,16 +107,25 @@ export function BookingActions({ bookingId, actions, viewerRole }: Props) {
         </form>
       )}
 
-      {actions.includes("review") && <ReviewForm bookingId={bookingId} formAction={formAction} />}
+      {actions.includes("review") && (
+        <ReviewForm bookingId={bookingId} formAction={formAction} onSubmit={handleSubmit} pending={pending} />
+      )}
 
       <FormStatus ok={state.ok} message={state.message} />
     </div>
   );
 }
 
-function ReviewForm({ bookingId, formAction }: { bookingId: string; formAction: (formData: FormData) => void }) {
+type ReviewFormProps = {
+  bookingId: string;
+  formAction: (formData: FormData) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  pending: boolean;
+};
+
+function ReviewForm({ bookingId, formAction, onSubmit, pending }: ReviewFormProps) {
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-sakura-50 p-5">
+    <form action={formAction} onSubmit={onSubmit} className="flex flex-col gap-4 rounded-card bg-sakura-50 p-5">
       <input type="hidden" name="bookingId" value={bookingId} />
       <input type="hidden" name="action" value="review" />
       <fieldset>
@@ -136,7 +148,7 @@ function ReviewForm({ bookingId, formAction }: { bookingId: string; formAction: 
       <Field id="review-comment" label="ความประทับใจ (ถ้ามี)">
         <Textarea id="review-comment" name="comment" rows={3} maxLength={1000} />
       </Field>
-      <SubmitButton className="self-start" pendingLabel="กำลังส่ง...">
+      <SubmitButton pending={pending} className="self-start" pendingLabel="กำลังส่ง...">
         ส่งรีวิว
       </SubmitButton>
     </form>

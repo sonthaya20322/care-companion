@@ -28,6 +28,7 @@ export const errorMessages: Record<string, string> = {
   INVALID_ERRAND_TYPE: "กรุณาเลือกประเภทธุระ",
   INVALID_DISTRICT: "กรุณาเลือกเขต/อำเภอของจุดรับ",
   MISSING_FIELDS: "กรุณากรอกข้อมูลที่จำเป็นให้ครบ",
+  INVALID_INPUT: "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบแล้วลองใหม่",
   BOOKING_NOT_FOUND: "ไม่พบนัดหมายนี้ หรือคุณไม่มีสิทธิ์เข้าถึง",
   BOOKING_NOT_AVAILABLE: "คำขอนี้มีผู้ช่วยรับไปแล้ว หรือหมดเวลาแล้ว",
   BOOKING_EXPIRED: "เลยเวลานัดหมายแล้ว",

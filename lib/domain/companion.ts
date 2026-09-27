@@ -68,6 +68,11 @@ export const serviceAreasSchema = z
   .max(60, "TOO_MANY_AREAS")
   .transform((ids) => [...new Set(ids)]);
 
+/** Mirrors save_my_service_areas: companions who are listed or under review must keep at least one area. */
+export function serviceAreaRequired(status: VerificationStatus): boolean {
+  return status === "approved" || status === "pending";
+}
+
 export type VerificationChecklist = {
   bio: boolean;
   serviceArea: boolean;

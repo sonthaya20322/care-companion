@@ -1,21 +1,21 @@
 "use client";
 
-import { useActionState } from "react";
 import { Field, Input, Textarea, describedBy } from "@/components/ui/Field";
 import { FormStatus } from "@/components/ui/FormStatus";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { companionRules } from "@/lib/domain/companion";
+import { useActionForm } from "@/lib/hooks/use-action-form";
 import type { ActionState } from "@/lib/services/action-helpers";
 import type { MyCompanionProfile } from "@/lib/services/companion-self";
 import { saveCompanionDetails } from "./actions";
 
 export function DetailsForm({ profile }: { profile: MyCompanionProfile }) {
-  const [state, formAction] = useActionState<ActionState, FormData>(saveCompanionDetails, {});
+  const { state, formAction, pending, formRef, handleSubmit } = useActionForm<ActionState>(saveCompanionDetails, {});
   const errors = state.fieldErrors ?? {};
   const bioHint = `อย่างน้อย ${companionRules.minBioLength} ตัวอักษร เล่าประสบการณ์ ความถนัด และนิสัยการทำงาน`;
 
   return (
-    <form action={formAction} className="flex flex-col gap-5" noValidate>
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <Field id="bio" label="แนะนำตัว" hint={bioHint} required error={errors.bio}>
         <Textarea
           id="bio"
@@ -90,7 +90,9 @@ export function DetailsForm({ profile }: { profile: MyCompanionProfile }) {
       </label>
 
       <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton pendingLabel="กำลังบันทึก...">บันทึกข้อมูลผู้ช่วย</SubmitButton>
+        <SubmitButton pending={pending} pendingLabel="กำลังบันทึก...">
+          บันทึกข้อมูลผู้ช่วย
+        </SubmitButton>
         <FormStatus ok={state.ok} message={state.message} />
       </div>
     </form>

@@ -49,23 +49,14 @@ export async function saveServiceAreas(_prev: ActionState, formData: FormData): 
   if (!parsed.success) return { message: fieldMessages(parsed.error).form ?? "ข้อมูลพื้นที่ไม่ถูกต้อง" };
 
   const supabase = await createClient();
-  const { error: deleteError } = await supabase.from("companion_service_areas").delete().eq("companion_id", profile.id);
-  if (deleteError) {
-    console.error("saveServiceAreas delete failed", { code: deleteError.code });
-    return { message: toUserMessage(deleteError) };
-  }
-  if (parsed.data.length > 0) {
-    const { error } = await supabase
-      .from("companion_service_areas")
-      .insert(parsed.data.map((districtId) => ({ companion_id: profile.id, district_id: districtId })));
-    if (error) {
-      console.error("saveServiceAreas insert failed", { code: error.code });
-      return { message: toUserMessage(error) };
-    }
+  const { data: count, error } = await supabase.rpc("save_my_service_areas", { p_district_ids: parsed.data });
+  if (error) {
+    console.error("saveServiceAreas failed", { code: error.code });
+    return { message: toUserMessage(error, "companion") };
   }
 
   refresh();
-  return { ok: true, message: `บันทึกพื้นที่ให้บริการ ${parsed.data.length} เขตแล้ว` };
+  return { ok: true, message: `บันทึกพื้นที่ให้บริการ ${count ?? parsed.data.length} เขตแล้ว` };
 }
 
 export async function saveAvailability(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -87,24 +78,12 @@ export async function saveAvailability(_prev: ActionState, formData: FormData): 
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
 
   const supabase = await createClient();
-  const { error: deleteError } = await supabase.from("companion_availability").delete().eq("companion_id", profile.id);
-  if (deleteError) {
-    console.error("saveAvailability delete failed", { code: deleteError.code });
-    return { message: toUserMessage(deleteError) };
-  }
-  if (slots.length > 0) {
-    const { error } = await supabase.from("companion_availability").insert(
-      slots.map((slot) => ({
-        companion_id: profile.id,
-        day_of_week: slot.dayOfWeek,
-        start_time: slot.startTime,
-        end_time: slot.endTime,
-      })),
-    );
-    if (error) {
-      console.error("saveAvailability insert failed", { code: error.code });
-      return { message: toUserMessage(error) };
-    }
+  const { error } = await supabase.rpc("save_my_availability", {
+    p_slots: slots.map((slot) => ({ day: slot.dayOfWeek, start: slot.startTime, end: slot.endTime })),
+  });
+  if (error) {
+    console.error("saveAvailability failed", { code: error.code });
+    return { message: toUserMessage(error, "companion") };
   }
 
   refresh();
