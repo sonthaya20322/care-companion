@@ -14,7 +14,10 @@ describe("bookingActionSchema", () => {
   });
 
   it("defaults an empty cancel note", () => {
-    expect(bookingActionSchema.parse({ action: "cancel", bookingId: id })).toMatchObject({ note: "" });
+    expect(bookingActionSchema.parse({ action: "cancel", bookingId: id })).toMatchObject({ note: "", confirmLate: false });
+    expect(bookingActionSchema.parse({ action: "cancel", bookingId: id, confirmLate: "on" })).toMatchObject({
+      confirmLate: true,
+    });
   });
 
   it.each([

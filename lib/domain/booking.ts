@@ -95,6 +95,14 @@ export function displayStatus(
   return booking.status;
 }
 
+/**
+ * A companion cancelling an accepted job this close to the start leaves the customer little time to
+ * find someone else, so it needs a reason plus a second confirmation and is counted for admins.
+ */
+export function isLateCompanionCancel(startsAt: Date, now: Date): boolean {
+  return startsAt.getTime() - now.getTime() < bookingRules.customerCancelCutoffHours * HOUR;
+}
+
 export function computeEndsAt(startsAt: Date, durationHours: number): Date {
   return new Date(startsAt.getTime() + durationHours * HOUR);
 }

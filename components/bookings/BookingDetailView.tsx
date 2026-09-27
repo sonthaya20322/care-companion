@@ -3,7 +3,14 @@ import { Avatar } from "@/components/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StatusStamp } from "@/components/ui/StatusStamp";
-import { availableActions, bookingStatusMeta, displayStatus, formatBaht, type Actor } from "@/lib/domain/booking";
+import {
+  availableActions,
+  bookingStatusMeta,
+  displayStatus,
+  formatBaht,
+  isLateCompanionCancel,
+  type Actor,
+} from "@/lib/domain/booking";
 import { contactVisible, timelineText, visibleNote } from "@/lib/domain/booking-timeline";
 import type { BookingDetail } from "@/lib/services/bookings";
 import { formatClock, formatDateTime, formatHours } from "@/lib/utils/format";
@@ -128,7 +135,12 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
             </div>
           </div>
         )}
-        <BookingActions bookingId={booking.id} actions={actions} viewerRole={viewer.role} />
+        <BookingActions
+          bookingId={booking.id}
+          actions={actions}
+          viewerRole={viewer.role}
+          lateCancel={viewerIsCompanion && booking.status === "accepted" && isLateCompanionCancel(startsAt, now)}
+        />
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">

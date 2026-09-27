@@ -8,7 +8,7 @@ import { Input, Select } from "@/components/ui/Field";
 import { StatusStamp } from "@/components/ui/StatusStamp";
 import { sanitizeSearch } from "@/lib/domain/admin";
 import type { UserRole } from "@/lib/domain/roles";
-import { listUsers } from "@/lib/services/admin";
+import { getUserBookingSummaries, listUsers } from "@/lib/services/admin";
 import { requireRole } from "@/lib/services/guard";
 import { formatDate } from "@/lib/utils/format";
 
@@ -28,6 +28,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
   const role = roleFilters.find((r) => r === params.role);
   const search = sanitizeSearch(params.q);
   const users = await listUsers({ role, search });
+  const summaries = await getUserBookingSummaries(users.map((u) => u.id));
 
   return (
     <>
@@ -76,8 +77,14 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
                   </p>
                   <p className="truncate text-sm text-sumi-soft">{u.email}</p>
                   <p className="text-sm text-sumi-soft">
-                    {roleLabels[u.role ?? "none"]} · สมัครเมื่อ {formatDate(u.created_at)}
+                    {roleLabels[u.role ?? "none"]} · สมัครเมื่อ {formatDate(u.created_at)} · นัดหมาย{" "}
+                    {summaries.get(u.id)?.bookings ?? 0} รายการ
                   </p>
+                  {(summaries.get(u.id)?.lateCancels ?? 0) > 0 && (
+                    <p className="text-sm font-medium text-beni">
+                      ยกเลิกกระชั้นชิด (น้อยกว่า 2 ชม. ก่อนนัด) {summaries.get(u.id)?.lateCancels} ครั้ง
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3 sm:justify-end">

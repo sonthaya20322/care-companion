@@ -18,6 +18,10 @@ export const bookingActionSchema = z.discriminatedUnion("action", [
     action: z.literal("cancel"),
     bookingId: z.uuid(),
     note: z.string().trim().max(500, "TEXT_TOO_LONG").optional().default(""),
+    confirmLate: z
+      .literal("on")
+      .optional()
+      .transform((v) => v === "on"),
   }),
   z.object({
     action: z.literal("review"),

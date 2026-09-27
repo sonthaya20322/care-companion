@@ -4,6 +4,7 @@ import {
   computeEndsAt,
   displayStatus,
   estimatePrice,
+  isLateCompanionCancel,
   rangesOverlap,
   validateSchedule,
   type BookingSnapshot,
@@ -61,6 +62,12 @@ describe("pricing and time helpers", () => {
 
   it("computes the end time", () => {
     expect(computeEndsAt(now, 2.5).toISOString()).toBe(hours(2.5).toISOString());
+  });
+
+  it("treats a companion cancel under 2 hours before the start as late (B-5)", () => {
+    expect(isLateCompanionCancel(hours(2), now)).toBe(false);
+    expect(isLateCompanionCancel(hours(1.9), now)).toBe(true);
+    expect(isLateCompanionCancel(hours(-1), now)).toBe(true);
   });
 
   it("treats touching ranges as not overlapping", () => {

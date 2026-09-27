@@ -16,9 +16,11 @@ type Props = {
   bookingId: string;
   actions: BookingAction[];
   viewerRole: UserRole;
+  /** Companion cancelling close to the start: ask for a second confirmation. */
+  lateCancel?: boolean;
 };
 
-export function BookingActions({ bookingId, actions, viewerRole }: Props) {
+export function BookingActions({ bookingId, actions, viewerRole, lateCancel = false }: Props) {
   // Forms with typed text submit through handleSubmit so a rejected submit keeps the text.
   const { state, formAction, pending, handleSubmit } = useActionForm<ActionState>(bookingAction, {});
   const [toggled, setOpen] = useState<"cancel" | "reject" | null>(null);
@@ -127,6 +129,18 @@ export function BookingActions({ bookingId, actions, viewerRole }: Props) {
           >
             <Textarea id={`${open}-note`} name="note" rows={2} maxLength={500} required={open === "cancel" && reasonRequired} />
           </Field>
+          {open === "cancel" && lateCancel && (
+            <div className="flex flex-col gap-2 rounded-control bg-washi-surface p-4 ring-1 ring-beni/30">
+              <p className="font-medium text-beni">
+                เหลือเวลาไม่ถึง 2 ชั่วโมงก่อนนัด ผู้ใช้บริการอาจหาผู้ช่วยคนใหม่ไม่ทัน
+                การยกเลิกกระชั้นชิดจะถูกบันทึกและผู้ดูแลระบบจะเห็นจำนวนครั้ง
+              </p>
+              <label className="flex items-start gap-3 text-sumi">
+                <input type="checkbox" name="confirmLate" required className="mt-1 size-5 accent-beni" />
+                ฉันเข้าใจและยืนยันว่าจำเป็นต้องยกเลิกนัดนี้จริง
+              </label>
+            </div>
+          )}
           <div className="flex flex-wrap gap-3">
             <SubmitButton pending={pending} variant={open === "cancel" ? "danger" : "secondary"} pendingLabel="กำลังบันทึก...">
               {open === "cancel" ? "ยืนยันการยกเลิก" : "ยืนยันการปฏิเสธ"}

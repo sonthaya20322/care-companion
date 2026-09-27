@@ -47,6 +47,20 @@ export async function listUsers(filter: { role?: UserRole | "none"; search?: str
   return (data ?? []) as AdminUser[];
 }
 
+export type UserBookingSummary = { bookings: number; lateCancels: number };
+
+export async function getUserBookingSummaries(ids: string[]): Promise<Map<string, UserBookingSummary>> {
+  const summaries = new Map<string, UserBookingSummary>();
+  if (ids.length === 0) return summaries;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_user_booking_summary", { p_user_ids: ids });
+  if (error) fail("admin_user_booking_summary", error);
+  for (const row of (data ?? []) as { user_id: string; bookings: number | string; late_cancels: number | string }[]) {
+    summaries.set(row.user_id, { bookings: Number(row.bookings), lateCancels: Number(row.late_cancels) });
+  }
+  return summaries;
+}
+
 export type CompanionReviewItem = Omit<MyCompanionProfile, "id"> & {
   id: string;
   full_name: string;
