@@ -1,14 +1,29 @@
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
+import { signOut } from "@/app/auth/actions";
 import { AppName } from "@/components/AppName";
-import { ButtonLink } from "@/components/ui/Button";
+import { ButtonLink, buttonClasses } from "@/components/ui/Button";
+import { homePathFor, roleLabels } from "@/lib/domain/roles";
+import { getCurrentProfile } from "@/lib/services/session";
 
-const navItems = [
+const publicNav = [
   { href: "/how-it-works", label: "วิธีใช้บริการ" },
   { href: "/companions", label: "ค้นหาผู้ช่วย" },
   { href: "/become-companion", label: "สมัครเป็นผู้ช่วย" },
 ];
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  // The header must never take the whole page down; pages that need the profile load it themselves.
+  const profile = await getCurrentProfile().catch((error: unknown) => {
+    unstable_rethrow(error);
+    console.error("SiteHeader: profile unavailable", { error: String(error) });
+    return null;
+  });
+  const home = profile ? homePathFor(profile.role) : null;
+  const navItems = profile?.role === "companion" || profile?.role === "admin"
+    ? publicNav.filter((item) => item.href !== "/become-companion")
+    : publicNav;
+
   return (
     <header className="sticky top-0 z-30 border-b border-washi-line bg-washi/90 backdrop-blur-sm">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-5">
@@ -30,9 +45,22 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <ButtonLink href="/login" variant="primary">
-            เข้าสู่ระบบ
-          </ButtonLink>
+          {profile && home ? (
+            <>
+              <ButtonLink href={home} variant="primary" className="max-sm:px-4">
+                {profile.role ? "บัญชีของฉัน" : "ตั้งค่าบัญชี"}
+              </ButtonLink>
+              <form action={signOut} className="hidden md:block">
+                <button type="submit" className={buttonClasses("ghost")}>
+                  ออกจากระบบ
+                </button>
+              </form>
+            </>
+          ) : (
+            <ButtonLink href="/login" variant="primary">
+              เข้าสู่ระบบ
+            </ButtonLink>
+          )}
 
           <details className="group relative md:hidden">
             <summary
@@ -51,8 +79,14 @@ export function SiteHeader() {
             </summary>
             <nav
               aria-label="เมนูหลัก (มือถือ)"
-              className="absolute right-0 top-14 w-60 animate-rise rounded-card bg-washi-surface p-2 shadow-lift ring-1 ring-washi-line"
+              className="absolute right-0 top-14 w-64 animate-rise rounded-card bg-washi-surface p-2 shadow-lift ring-1 ring-washi-line"
             >
+              {profile && (
+                <p className="border-b border-washi-line px-4 pb-3 pt-2 text-sm text-sumi-soft">
+                  {profile.full_name || profile.email}
+                  {profile.role && <span className="block">{roleLabels[profile.role]}</span>}
+                </p>
+              )}
               <ul className="flex flex-col">
                 {navItems.map((item) => (
                   <li key={item.href}>
@@ -64,6 +98,18 @@ export function SiteHeader() {
                     </Link>
                   </li>
                 ))}
+                {profile && (
+                  <li>
+                    <form action={signOut}>
+                      <button
+                        type="submit"
+                        className="flex min-h-12 w-full items-center rounded-control px-4 text-left text-beni hover:bg-beni-bg"
+                      >
+                        ออกจากระบบ
+                      </button>
+                    </form>
+                  </li>
+                )}
               </ul>
             </nav>
           </details>
