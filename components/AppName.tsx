@@ -15,7 +15,7 @@ export function AppName({ className }: AppNameProps) {
     >
       <svg
         viewBox="0 0 40 40"
-        className="size-10 -rotate-6 transition-transform duration-300 ease-out-quart group-hover:rotate-0"
+        className="size-9 -rotate-6 transition-transform duration-300 ease-out-quart group-hover:rotate-0 sm:size-10"
         aria-hidden
       >
         <circle cx="20" cy="20" r="18" className="fill-sakura-100 stroke-sakura-600" strokeWidth="2" />
@@ -30,7 +30,7 @@ export function AppName({ className }: AppNameProps) {
         />
         <path d="M17.5 23.5h6" className="stroke-sumi" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span className="font-brand text-xl font-bold tracking-tight text-sumi">
+      <span className="whitespace-nowrap font-brand text-lg font-bold tracking-tight text-sumi sm:text-xl">
         Care<span className="text-sakura-600"> Companion</span>
       </span>
     </Link>

@@ -6,7 +6,7 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-control font-medium " +
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium " +
   "transition-[transform,background-color,box-shadow] duration-200 ease-out-quart " +
   "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 " +
   "aria-busy:cursor-progress";

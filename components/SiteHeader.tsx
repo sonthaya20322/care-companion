@@ -11,7 +11,7 @@ const navItems = [
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-washi-line bg-washi/90 backdrop-blur-sm">
-      <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-4 px-5">
+      <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-5">
         <AppName />
 
         <nav aria-label="เมนูหลัก" className="hidden md:block">
@@ -29,7 +29,7 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <ButtonLink href="/login" variant="primary">
             เข้าสู่ระบบ
           </ButtonLink>
