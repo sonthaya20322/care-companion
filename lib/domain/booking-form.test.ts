@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { bangkokDateString, bangkokLocalToDate, durationOptions, parseBookingForm } from "./booking-form";
+import {
+  bangkokDateString,
+  bangkokLocalToDate,
+  bangkokTimeString,
+  checkStart,
+  defaultStart,
+  durationOptions,
+  earliestStart,
+  parseBookingForm,
+} from "./booking-form";
 
 const now = new Date("2026-10-01T01:00:00Z"); // 08:00 in Bangkok
 
@@ -70,6 +79,7 @@ describe("parseBookingForm", () => {
 
   it.each([
     [{ time: "09:30", date: "2026-10-01" }, "START_TOO_SOON"],
+    [{ time: "07:00", date: "2026-10-01" }, "START_IN_PAST"],
     [{ date: "2026-12-15" }, "START_TOO_FAR"],
     [{ durationHours: "1.25" }, "INVALID_DURATION"],
     [{ pickupAddress: " " }, "PICKUP_REQUIRED"],
@@ -80,5 +90,35 @@ describe("parseBookingForm", () => {
     const result = parseBookingForm({ ...base, ...patch }, now);
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.issues.map((i) => i.message)).toContain(code);
+  });
+
+  it("points start-time problems at the field the user should change", () => {
+    const soon = parseBookingForm({ ...base, date: "2026-10-01", time: "09:30" }, now);
+    const far = parseBookingForm({ ...base, date: "2026-12-15" }, now);
+    expect(soon.success ? null : soon.error.issues[0].path).toEqual(["time"]);
+    expect(far.success ? null : far.error.issues[0].path).toEqual(["date"]);
+  });
+});
+
+describe("start time helpers", () => {
+  it("rounds the earliest start up to the next half hour after the lead time", () => {
+    expect(bangkokTimeString(earliestStart(new Date("2026-10-01T01:10:00Z")))).toBe("10:30");
+    expect(bangkokTimeString(earliestStart(new Date("2026-10-01T01:00:00Z")))).toBe("10:00");
+  });
+
+  it.each([
+    ["early morning -> 09:00 same day", "2026-09-30T23:00:00Z", { date: "2026-10-01", time: "09:00" }],
+    ["afternoon -> earliest slot", "2026-10-01T05:05:00Z", { date: "2026-10-01", time: "14:30" }],
+    ["evening -> next morning", "2026-10-01T11:05:00Z", { date: "2026-10-02", time: "09:00" }],
+    ["late night crosses midnight", "2026-10-01T16:40:00Z", { date: "2026-10-02", time: "09:00" }],
+  ])("defaultStart: %s", (_label, iso, expected) => {
+    expect(defaultStart(new Date(iso))).toEqual(expected);
+  });
+
+  it("separates past, too soon, too far and fine", () => {
+    expect(checkStart(new Date("2026-10-01T00:30:00Z"), now)).toBe("START_IN_PAST");
+    expect(checkStart(new Date("2026-10-01T02:00:00Z"), now)).toBe("START_TOO_SOON");
+    expect(checkStart(new Date("2026-12-15T02:00:00Z"), now)).toBe("START_TOO_FAR");
+    expect(checkStart(new Date("2026-10-01T03:00:00Z"), now)).toBeNull();
   });
 });

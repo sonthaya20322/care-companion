@@ -2,15 +2,15 @@ export const TIME_ZONE = "Asia/Bangkok";
 
 export const dayNames = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"] as const;
 
-const dateTimeFormat = new Intl.DateTimeFormat("th-TH", {
-  timeZone: TIME_ZONE,
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+// Built by hand instead of Intl so client components hydrate cleanly: Node and browsers ship
+// different CLDR data (e.g. Node prints "จ." where Chrome prints "จันทร์").
+const shortDayNames = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."] as const;
+const shortMonthNames = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+] as const;
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", {
   timeZone: TIME_ZONE,
@@ -21,7 +21,11 @@ const dateFormat = new Intl.DateTimeFormat("th-TH", {
 
 /** "ศ. 3 ต.ค. 2569 09:30 น." in Bangkok time regardless of server time zone. */
 export function formatDateTime(value: string | Date): string {
-  return `${dateTimeFormat.format(new Date(value))} น.`;
+  const d = new Date(new Date(value).getTime() + BANGKOK_OFFSET_MS);
+  const day = shortDayNames[d.getUTCDay()];
+  const month = shortMonthNames[d.getUTCMonth()];
+  const clock = `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+  return `${day} ${d.getUTCDate()} ${month} ${d.getUTCFullYear() + 543} ${clock} น.`;
 }
 
 export function formatDate(value: string | Date): string {

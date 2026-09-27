@@ -1,14 +1,21 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { AreaSelect } from "@/components/companions/AreaSelect";
+import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea, describedBy } from "@/components/ui/Field";
 import { FormStatus } from "@/components/ui/FormStatus";
-import { SubmitButton } from "@/components/ui/SubmitButton";
-import { bookingRules, estimatePrice, formatBaht } from "@/lib/domain/booking";
-import { durationOptions } from "@/lib/domain/booking-form";
+import { bookingRules, computeEndsAt, estimatePrice, formatBaht } from "@/lib/domain/booking";
+import {
+  bangkokDateString,
+  bangkokLocalToDate,
+  bangkokTimeString,
+  checkStart,
+  durationOptions,
+} from "@/lib/domain/booking-form";
+import { errorMessages } from "@/lib/domain/errors";
 import type { ErrandType, ProvinceWithDistricts } from "@/lib/services/catalog";
-import { formatHours } from "@/lib/utils/format";
+import { formatClock, formatDateTime, formatHours } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { createBooking, type BookingFormState } from "./actions";
 
@@ -20,6 +27,8 @@ type BookingFormProps = {
   defaultPhone: string;
   minDate: string;
   maxDate: string;
+  earliestStartIso: string;
+  defaultStart: { date: string; time: string };
 };
 
 export function BookingForm({
@@ -30,12 +39,57 @@ export function BookingForm({
   defaultPhone,
   minDate,
   maxDate,
+  earliestStartIso,
+  defaultStart,
 }: BookingFormProps) {
   const [state, formAction] = useActionState<BookingFormState, FormData>(createBooking, {});
+  const [pending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
   const values = state.values ?? {};
-  const errors = state.fieldErrors ?? {};
+  const [edited, setEdited] = useState<string[]>([]);
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    setEdited([]);
+  }
+  const errors = Object.fromEntries(
+    Object.entries(state.fieldErrors ?? {}).filter(([field]) => !edited.includes(field)),
+  );
+  const markEdited = (...fields: string[]) => setEdited((prev) => [...prev, ...fields]);
+  const [date, setDate] = useState(values.date ?? defaultStart.date);
+  const [time, setTime] = useState(values.time ?? defaultStart.time);
   const [duration, setDuration] = useState(Number(values.durationHours ?? 3));
   const estimate = estimatePrice(companion?.hourlyRate ?? null, duration);
+
+  const earliest = new Date(earliestStartIso);
+  const startsAt = bangkokLocalToDate(date, time);
+  const referenceNow = new Date(earliest.getTime() - bookingRules.minLeadHours * 60 * 60 * 1000);
+  const startProblem = startsAt ? checkStart(startsAt, referenceNow) : null;
+
+  // Submitting through a transition (instead of the native form action) stops React from resetting
+  // the form, so selects like duration and pickup district keep what the user picked.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  }
+
+  useEffect(() => {
+    const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"], [data-error-anchor]');
+    if (!target) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ block: "center", behavior: smooth ? "smooth" : "auto" });
+    target.focus({ preventScroll: true });
+  }, [state]);
+
+  function pickEarliest() {
+    setDate(bangkokDateString(earliest));
+    setTime(bangkokTimeString(earliest));
+    markEdited("date", "time");
+  }
+
+  const endsAt = startsAt ? computeEndsAt(startsAt, duration) : null;
+  const endsNextDay = startsAt && endsAt ? bangkokDateString(endsAt) !== bangkokDateString(startsAt) : false;
 
   const input = (name: string, hint?: string) => ({
     id: name,
@@ -45,11 +99,16 @@ export function BookingForm({
   });
 
   return (
-    <form action={formAction} className="flex flex-col gap-8" noValidate>
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-8" noValidate>
       <input type="hidden" name="companionId" value={companion?.id ?? ""} />
 
       {state.message && (
-        <p role="alert" className="rounded-control bg-beni-bg px-4 py-3 font-medium text-beni">
+        <p
+          role="alert"
+          tabIndex={-1}
+          data-error-anchor
+          className="scroll-mt-24 rounded-control bg-beni-bg px-4 py-3 font-medium text-beni"
+        >
           {state.message}
         </p>
       )}
@@ -57,7 +116,7 @@ export function BookingForm({
       <fieldset className="flex flex-col gap-3" aria-describedby={errors.errandTypeId ? "errandTypeId-error" : undefined}>
         <legend className="font-display text-xl text-sumi">1. ธุระที่ต้องการให้ช่วย</legend>
         <div className="mt-3 flex flex-wrap gap-2">
-          {errandTypes.map((type) => (
+          {errandTypes.map((type, index) => (
             <label
               key={type.id}
               className={cn(
@@ -72,6 +131,7 @@ export function BookingForm({
                 name="errandTypeId"
                 value={type.id}
                 defaultChecked={values.errandTypeId === String(type.id)}
+                data-error-anchor={errors.errandTypeId && index === 0 ? "" : undefined}
                 className="sr-only"
                 required
               />
@@ -90,16 +150,46 @@ export function BookingForm({
         <legend className="font-display text-xl text-sumi">2. วันและเวลา</legend>
         <div className="mt-3 grid gap-5 sm:grid-cols-3">
           <Field id="date" label="วันที่" required error={errors.date}>
-            <Input {...input("date")} type="date" min={minDate} max={maxDate} defaultValue={values.date} required />
+            <Input
+              {...input("date")}
+              type="date"
+              min={minDate}
+              max={maxDate}
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value);
+                markEdited("date", "time");
+              }}
+              required
+            />
           </Field>
-          <Field id="time" label="เวลาเริ่ม" required error={errors.time}>
-            <Input {...input("time")} type="time" step={1800} defaultValue={values.time ?? "09:00"} required />
+          <Field id="time" label="เวลาเริ่ม" hint="เวลาที่ผู้ช่วยไปถึงจุดรับ" required error={errors.time}>
+            <Input
+              {...input("time", "hint")}
+              type="time"
+              step={1800}
+              value={time}
+              onChange={(event) => {
+                setTime(event.target.value);
+                markEdited("date", "time");
+              }}
+              required
+            />
           </Field>
-          <Field id="durationHours" label="ระยะเวลา" required error={errors.durationHours}>
+          <Field
+            id="durationHours"
+            label="ระยะเวลา"
+            hint="รวมเวลาเดินทางไป-กลับ"
+            required
+            error={errors.durationHours}
+          >
             <Select
-              {...input("durationHours")}
+              {...input("durationHours", "hint")}
               value={duration}
-              onChange={(event) => setDuration(Number(event.target.value))}
+              onChange={(event) => {
+                setDuration(Number(event.target.value));
+                markEdited("durationHours");
+              }}
             >
               {durationOptions().map((hours) => (
                 <option key={hours} value={hours}>
@@ -109,10 +199,35 @@ export function BookingForm({
             </Select>
           </Field>
         </div>
-        <p className="text-sm text-sumi-soft">
-          จองล่วงหน้าอย่างน้อย {bookingRules.minLeadHours} ชั่วโมง และไม่เกิน {bookingRules.maxAdvanceDays} วัน
-          รวมเวลาเดินทางไป-กลับด้วย
-        </p>
+        <div aria-live="polite" className="flex flex-col gap-2 rounded-control bg-sora-50 px-4 py-3 text-sm">
+          {startsAt && endsAt && !startProblem ? (
+            <p className="text-sumi">
+              ผู้ช่วยจะไปถึงจุดรับ <strong>{formatDateTime(startsAt)}</strong> และอยู่กับคุณจนถึง{" "}
+              <strong>
+                {formatClock(endsAt)}
+                {endsNextDay && " ของวันถัดไป"}
+              </strong>{" "}
+              ({formatHours(duration)})
+            </p>
+          ) : (
+            startProblem && <p className="font-medium text-beni">{errorMessages[startProblem]}</p>
+          )}
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sumi-soft">
+            <span>
+              จองได้เร็วที่สุด {formatDateTime(earliest)} (ล่วงหน้าอย่างน้อย {bookingRules.minLeadHours} ชั่วโมง
+              ไม่เกิน {bookingRules.maxAdvanceDays} วัน)
+            </span>
+            {startProblem && startProblem !== "START_TOO_FAR" && (
+              <button
+                type="button"
+                onClick={pickEarliest}
+                className="min-h-10 rounded-full px-3 font-medium text-sora-700 underline underline-offset-4 hover:bg-sora-100"
+              >
+                ใช้เวลานี้
+              </button>
+            )}
+          </p>
+        </div>
       </fieldset>
 
       <fieldset className="flex flex-col gap-5">
@@ -216,9 +331,9 @@ export function BookingForm({
           </p>
           <p className="text-sm text-sumi-soft">ชำระกับผู้ช่วยโดยตรงหลังจบบริการ</p>
         </div>
-        <SubmitButton size="lg" pendingLabel="กำลังส่งคำขอ...">
-          {companion ? `ส่งคำขอถึงคุณ${companion.name}` : "โพสต์คำขอ"}
-        </SubmitButton>
+        <Button type="submit" size="lg" loading={pending}>
+          {pending ? "กำลังส่งคำขอ..." : companion ? `ส่งคำขอถึงคุณ${companion.name}` : "โพสต์คำขอ"}
+        </Button>
       </div>
       <FormStatus message={Object.keys(errors).length > 0 ? "กรุณาตรวจสอบข้อมูลที่ไฮไลต์สีแดง" : undefined} />
     </form>

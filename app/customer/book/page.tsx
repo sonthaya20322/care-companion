@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { PageHeading } from "@/components/area/AreaShell";
 import { formatBaht } from "@/lib/domain/booking";
-import { bangkokDateString } from "@/lib/domain/booking-form";
+import { bangkokDateString, defaultStart, earliestStart } from "@/lib/domain/booking-form";
 import { bookingRules } from "@/lib/domain/booking";
 import { getErrandTypes, getLocations } from "@/lib/services/catalog";
 import { getPublicCompanion } from "@/lib/services/companions";
@@ -81,6 +81,8 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
         defaultPhone={profile.phone ?? ""}
         minDate={minDate}
         maxDate={maxDate}
+        earliestStartIso={earliestStart(now).toISOString()}
+        defaultStart={defaultStart(now)}
       />
     </>
   );

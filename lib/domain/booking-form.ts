@@ -14,6 +14,41 @@ export function bangkokDateString(instant: Date): string {
   return new Date(instant.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+/** "HH:MM" of the given instant in Bangkok. */
+export function bangkokTimeString(instant: Date): string {
+  return new Date(instant.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16);
+}
+
+const SLOT_MS = 30 * 60 * 1000;
+
+/** Soonest bookable start: now + minimum lead time, rounded up to the next half hour. */
+export function earliestStart(now: Date): Date {
+  const min = now.getTime() + bookingRules.minLeadHours * 60 * 60 * 1000;
+  return new Date(Math.ceil(min / SLOT_MS) * SLOT_MS);
+}
+
+const DEFAULT_TIME = "09:00";
+const LATEST_DEFAULT_TIME = "17:00";
+
+/** Pre-filled date/time: 09:00 on the earliest day, the earliest slot if 09:00 has passed, or next morning after 17:00. */
+export function defaultStart(now: Date): { date: string; time: string } {
+  const earliest = earliestStart(now);
+  const date = bangkokDateString(earliest);
+  const time = bangkokTimeString(earliest);
+  if (time <= DEFAULT_TIME) return { date, time: DEFAULT_TIME };
+  if (time <= LATEST_DEFAULT_TIME) return { date, time };
+  return { date: bangkokDateString(new Date(earliest.getTime() + 24 * 60 * 60 * 1000)), time: DEFAULT_TIME };
+}
+
+export type StartProblem = "START_IN_PAST" | "START_TOO_SOON" | "START_TOO_FAR";
+
+/** Start-time rule with a separate code for times that have already passed, so the message is not misleading. */
+export function checkStart(startsAt: Date, now: Date): StartProblem | null {
+  if (startsAt.getTime() <= now.getTime()) return "START_IN_PAST";
+  const problem = validateSchedule(startsAt, bookingRules.minDurationHours, now);
+  return problem === "START_TOO_SOON" || problem === "START_TOO_FAR" ? problem : null;
+}
+
 export function durationOptions(): number[] {
   const options: number[] = [];
   for (let h = bookingRules.minDurationHours; h <= bookingRules.maxDurationHours; h += bookingRules.durationStepHours) {
@@ -68,9 +103,12 @@ export type BookingFormInput = z.infer<typeof bookingFormSchema>;
 export function parseBookingForm(raw: Record<string, string>, now: Date) {
   const parsed = bookingFormSchema.safeParse(raw);
   if (!parsed.success) return parsed;
-  const scheduleError = validateSchedule(parsed.data.startsAt, parsed.data.durationHours, now);
+  const scheduleError =
+    validateSchedule(parsed.data.startsAt, parsed.data.durationHours, now) === "INVALID_DURATION"
+      ? "INVALID_DURATION"
+      : checkStart(parsed.data.startsAt, now);
   if (scheduleError) {
-    const path = scheduleError === "INVALID_DURATION" ? "durationHours" : "date";
+    const path = scheduleError === "INVALID_DURATION" ? "durationHours" : scheduleError === "START_TOO_FAR" ? "date" : "time";
     return {
       success: false as const,
       error: new z.ZodError([{ code: "custom", message: scheduleError, path: [path], input: undefined }]),

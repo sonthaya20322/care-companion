@@ -3,7 +3,11 @@ import { formatClock, formatDateTime, formatHours, formatTime } from "./format";
 
 describe("format", () => {
   it("shows Bangkok time even for a UTC timestamp", () => {
-    expect(formatDateTime("2026-10-02T02:30:00Z")).toContain("09:30");
+    expect(formatDateTime("2026-10-02T02:30:00Z")).toBe("ศ. 2 ต.ค. 2569 09:30 น.");
+  });
+
+  it("rolls the date over when Bangkok is already past midnight", () => {
+    expect(formatDateTime("2026-12-31T17:15:00Z")).toBe("ศ. 1 ม.ค. 2570 00:15 น.");
   });
 
   it("shows the Bangkok clock time of a timestamp, past midnight UTC too", () => {
