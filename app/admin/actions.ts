@@ -41,7 +41,10 @@ export async function setUserStatus(_prev: ActionState, formData: FormData): Pro
     return { message: toUserMessage(error) };
   }
   refresh();
-  return { ok: true, message: parsed.data.status === "suspended" ? "ระงับบัญชีแล้ว" : "เปิดใช้งานบัญชีแล้ว" };
+  return {
+    ok: true,
+    message: parsed.data.status === "suspended" ? "ระงับบัญชีและยกเลิกนัดที่ยังไม่เริ่มแล้ว" : "เปิดใช้งานบัญชีแล้ว",
+  };
 }
 
 export async function saveErrandType(_prev: ActionState, formData: FormData): Promise<ActionState> {

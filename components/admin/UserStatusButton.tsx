@@ -16,7 +16,12 @@ export function UserStatusButton({ userId, name, status }: Props) {
       action={formAction}
       className="flex flex-col items-end gap-1"
       onSubmit={(event) => {
-        if (next === "suspended" && !window.confirm(`ระงับบัญชีของ ${name}? ผู้ใช้จะเข้าใช้งานไม่ได้จนกว่าจะเปิดอีกครั้ง`)) {
+        if (
+          next === "suspended" &&
+          !window.confirm(
+            `ระงับบัญชีของ ${name}? ผู้ใช้จะเข้าใช้งานไม่ได้จนกว่าจะเปิดอีกครั้ง และนัดที่ยังไม่เริ่มของบัญชีนี้จะถูกยกเลิกทันที (อีกฝ่ายจะเห็นเหตุผล “บัญชีถูกระงับ”)`,
+          )
+        ) {
           event.preventDefault();
         }
       }}
