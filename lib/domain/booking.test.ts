@@ -20,11 +20,13 @@ const otherCompanion = { id: "com-2", role: "companion" as const };
 const admin = { id: "adm-1", role: "admin" as const };
 
 function booking(overrides: Partial<BookingSnapshot> = {}): BookingSnapshot {
+  const startsAt = overrides.startsAt ?? hours(24);
   return {
     status: "requested",
     customerId: customer.id,
     companionId: companion.id,
-    startsAt: hours(24),
+    startsAt,
+    endsAt: new Date(startsAt.getTime() + 2 * 60 * 60 * 1000),
     ...overrides,
   };
 }
@@ -66,9 +68,21 @@ describe("pricing and time helpers", () => {
     expect(rangesOverlap(hours(1), hours(3), hours(2.5), hours(5))).toBe(true);
   });
 
-  it("shows unanswered past requests as expired", () => {
-    expect(displayStatus({ status: "requested", startsAt: hours(-1) }, now)).toBe("expired");
-    expect(displayStatus({ status: "accepted", startsAt: hours(-1) }, now)).toBe("accepted");
+  it("closes requests 1 hour before the start (bug X1: companions could claim at the last minute)", () => {
+    expect(displayStatus({ status: "requested", startsAt: hours(1.5), companionId: "c" }, now)).toBe("requested");
+    expect(displayStatus({ status: "requested", startsAt: hours(1), companionId: "c" }, now)).toBe("expired");
+    expect(displayStatus({ status: "requested", startsAt: hours(-1), companionId: "c" }, now)).toBe("expired");
+  });
+
+  it("labels open requests separately from direct ones", () => {
+    expect(displayStatus({ status: "requested", startsAt: hours(5), companionId: null }, now)).toBe("open");
+    expect(displayStatus({ status: "requested", startsAt: hours(0.5), companionId: null }, now)).toBe("expired");
+  });
+
+  it("marks an accepted job overdue 30 minutes after the start (bug X2)", () => {
+    expect(displayStatus({ status: "accepted", startsAt: hours(-0.4) }, now)).toBe("accepted");
+    expect(displayStatus({ status: "accepted", startsAt: hours(-0.5) }, now)).toBe("overdue");
+    expect(displayStatus({ status: "in_progress", startsAt: hours(-5) }, now)).toBe("in_progress");
   });
 });
 
@@ -81,11 +95,17 @@ describe("availableActions", () => {
     expect(availableActions(booking(), otherCompanion, now)).toEqual([]);
   });
 
-  it("lets any companion claim an open request before it starts", () => {
+  it("lets any companion claim an open request until 1 hour before it starts", () => {
     expect(availableActions(booking({ companionId: null }), otherCompanion, now)).toEqual(["claim"]);
+    expect(availableActions(booking({ companionId: null, startsAt: hours(1) }), otherCompanion, now)).toEqual([]);
     expect(availableActions(booking({ companionId: null, startsAt: hours(-1) }), otherCompanion, now)).toEqual(
       [],
     );
+  });
+
+  it("stops accept/reject on a direct request after the deadline", () => {
+    expect(availableActions(booking({ startsAt: hours(1.1) }), companion, now)).toEqual(["accept", "reject"]);
+    expect(availableActions(booking({ startsAt: hours(0.9) }), companion, now)).toEqual([]);
   });
 
   it("only allows starting within 1 hour of the start time", () => {
@@ -98,8 +118,36 @@ describe("availableActions", () => {
     ]);
   });
 
+  it("lets a late companion still start until the booked end time", () => {
+    expect(availableActions(booking({ status: "accepted", startsAt: hours(-1) }), companion, now)).toEqual([
+      "start",
+      "cancel",
+    ]);
+    expect(availableActions(booking({ status: "accepted", startsAt: hours(-2) }), companion, now)).toEqual([
+      "cancel",
+    ]);
+  });
+
   it("lets the companion complete a job in progress", () => {
     expect(availableActions(booking({ status: "in_progress" }), companion, now)).toEqual(["complete"]);
+  });
+
+  it("lets the customer report a no-show from 30 minutes after the start (bug X2)", () => {
+    expect(availableActions(booking({ status: "accepted", startsAt: hours(-0.25) }), customer, now)).toEqual([]);
+    expect(availableActions(booking({ status: "accepted", startsAt: hours(-0.5) }), customer, now)).toEqual([
+      "no_show",
+    ]);
+  });
+
+  it("lets the customer confirm completion once the booked time is over (bug X3)", () => {
+    expect(availableActions(booking({ status: "in_progress", startsAt: hours(-1) }), customer, now)).toEqual([]);
+    expect(availableActions(booking({ status: "in_progress", startsAt: hours(-2) }), customer, now)).toEqual([
+      "confirm_complete",
+    ]);
+    expect(availableActions(booking({ status: "accepted", startsAt: hours(-3) }), customer, now)).toEqual([
+      "no_show",
+      "confirm_complete",
+    ]);
   });
 
   it("lets the customer cancel an accepted booking only until 2 hours before", () => {
@@ -110,7 +158,8 @@ describe("availableActions", () => {
   });
 
   it("does not offer cancel on an expired request (nothing left to cancel)", () => {
-    expect(availableActions(booking({ status: "requested", startsAt: hours(1) }), customer, now)).toEqual(["cancel"]);
+    expect(availableActions(booking({ status: "requested", startsAt: hours(1.5) }), customer, now)).toEqual(["cancel"]);
+    expect(availableActions(booking({ status: "requested", startsAt: hours(1) }), customer, now)).toEqual([]);
     expect(availableActions(booking({ status: "requested", startsAt: hours(-1) }), customer, now)).toEqual([]);
   });
 

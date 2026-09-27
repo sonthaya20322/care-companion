@@ -69,6 +69,29 @@ export function BookingActions({ bookingId, actions, viewerRole }: Props) {
             </SubmitButton>
           </form>
         )}
+        {actions.includes("confirm_complete") && (
+          <form action={formAction}>
+            {hidden("confirm_complete")}
+            <SubmitButton size="lg" pendingLabel="กำลังบันทึก...">
+              ยืนยันว่าจบงานแล้ว
+            </SubmitButton>
+          </form>
+        )}
+        {actions.includes("no_show") && (
+          <form
+            action={formAction}
+            onSubmit={(event) => {
+              if (!window.confirm("ยืนยันว่าผู้ช่วยไม่มาตามนัด? นัดนี้จะถูกปิดและผู้ดูแลระบบจะเห็นรายการนี้")) {
+                event.preventDefault();
+              }
+            }}
+          >
+            {hidden("no_show")}
+            <SubmitButton variant="danger" size="lg" pendingLabel="กำลังบันทึก...">
+              ผู้ช่วยไม่มาตามนัด
+            </SubmitButton>
+          </form>
+        )}
         {actions.includes("reject") && (
           <Button variant="secondary" size="lg" onClick={() => setOpen(open === "reject" ? null : "reject")} aria-expanded={open === "reject"}>
             ปฏิเสธ

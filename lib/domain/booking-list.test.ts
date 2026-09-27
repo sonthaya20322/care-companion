@@ -9,11 +9,13 @@ const rows = [
   { id: "expired", status: "requested" as const, starts_at: "2026-09-30T02:00:00+00:00" },
   { id: "running", status: "in_progress" as const, starts_at: "2026-10-01T02:00:00+00:00" },
   { id: "cancelled", status: "cancelled" as const, starts_at: "2026-10-10T02:00:00+00:00" },
+  { id: "open", status: "requested" as const, starts_at: "2026-10-03T02:00:00+00:00", companion_id: null },
+  { id: "noshow", status: "accepted" as const, starts_at: "2026-10-01T01:30:00+00:00" },
 ];
 
 describe("splitBookings", () => {
-  it("keeps actionable bookings upcoming, soonest first", () => {
-    expect(splitBookings(rows, now).upcoming.map((b) => b.id)).toEqual(["running", "soon", "late"]);
+  it("keeps actionable bookings upcoming, soonest first (overdue jobs still need a decision)", () => {
+    expect(splitBookings(rows, now).upcoming.map((b) => b.id)).toEqual(["noshow", "running", "soon", "open", "late"]);
   });
 
   it("moves finished, cancelled and expired requests to history in original order", () => {
@@ -27,6 +29,8 @@ describe("countByStatus", () => {
       accepted: 1,
       completed: 1,
       requested: 1,
+      open: 1,
+      overdue: 1,
       expired: 1,
       in_progress: 1,
       cancelled: 1,

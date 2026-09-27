@@ -29,6 +29,13 @@ describe("timelineText", () => {
       "ผู้ช่วยตอบรับนัดหมาย",
     );
   });
+
+  it("says the customer confirmed when they close the job themselves", () => {
+    const log = { from_status: "in_progress" as const, to_status: "completed" as const, changed_by: "cust" };
+    expect(timelineText(log, parties, "cust")).toBe("คุณยืนยันว่าจบงานแล้ว");
+    expect(timelineText(log, parties, "comp")).toBe("ผู้ใช้บริการยืนยันว่าจบงานแล้ว");
+    expect(timelineText({ ...log, changed_by: "comp" }, parties, "cust")).toBe("ผู้ช่วยจบงาน");
+  });
 });
 
 describe("visibleNote", () => {

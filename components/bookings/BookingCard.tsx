@@ -14,7 +14,10 @@ type Props = {
 };
 
 export function BookingCard({ booking, href, counterpart, counterpartFallback, now }: Props) {
-  const meta = bookingStatusMeta[displayStatus({ status: booking.status, startsAt: new Date(booking.starts_at) }, now)];
+  const meta =
+    bookingStatusMeta[
+      displayStatus({ status: booking.status, startsAt: new Date(booking.starts_at), companionId: booking.companion_id }, now)
+    ];
   return (
     <li>
       <Link

@@ -27,7 +27,9 @@ const verbs: Record<BookingStatus, string> = {
 };
 
 export function timelineText(log: TimelineLog, parties: Parties, viewerId: string): string {
-  return `${actorLabel(log.changed_by, parties, viewerId)}${verbs[log.to_status]}`;
+  const confirmedByCustomer = log.to_status === "completed" && log.changed_by === parties.customerId;
+  const verb = confirmedByCustomer ? "ยืนยันว่าจบงานแล้ว" : verbs[log.to_status];
+  return `${actorLabel(log.changed_by, parties, viewerId)}${verb}`;
 }
 
 /** Only reasons typed by a person are shown; the RPCs also log internal notes on other transitions. */

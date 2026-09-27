@@ -85,7 +85,7 @@ export default function HowItWorksPage() {
         </ol>
         <p className="mt-5 text-sm text-sumi-soft">
           นัดหมายอาจเป็น “{bookingStatusMeta.rejected.label}” “{bookingStatusMeta.cancelled.label}” หรือ “
-          {bookingStatusMeta.expired.label}” หากถึงเวลาแล้วยังไม่มีผู้ช่วยตอบรับ
+          {bookingStatusMeta.expired.label}” หากไม่มีผู้ช่วยตอบรับภายใน {bookingRules.requestDeadlineHours} ชั่วโมงก่อนเวลานัด
         </p>
       </section>
 
@@ -100,6 +100,10 @@ export default function HowItWorksPage() {
           </li>
           <li>
             ยกเลิกนัดที่ผู้ช่วยตอบรับแล้วได้ก่อนเวลานัดอย่างน้อย {bookingRules.customerCancelCutoffHours} ชั่วโมง
+          </li>
+          <li>
+            ถ้าเลยเวลานัด {bookingRules.noShowAfterMinutes} นาทีแล้วผู้ช่วยยังไม่มา กด “ผู้ช่วยไม่มาตามนัด”
+            เพื่อปิดนัดได้เอง และถ้าเลยเวลาสิ้นสุดแล้วผู้ช่วยลืมกดจบงาน คุณยืนยันจบงานเองแล้วรีวิวต่อได้
           </li>
           <li>ราคาที่แสดงเป็นราคาประเมิน (อัตราต่อชั่วโมง × ชั่วโมง) ชำระกับผู้ช่วยโดยตรง ไม่ผ่านระบบ</li>
           <li>กรณีฉุกเฉินทางการแพทย์ โทร 1669 ทันที</li>

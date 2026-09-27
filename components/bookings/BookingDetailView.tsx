@@ -19,7 +19,8 @@ type Props = {
 
 export function BookingDetailView({ booking, viewer, now, justCreated = false }: Props) {
   const startsAt = new Date(booking.starts_at);
-  const status = displayStatus({ status: booking.status, startsAt }, now);
+  const endsAt = new Date(booking.ends_at);
+  const status = displayStatus({ status: booking.status, startsAt, companionId: booking.companion_id }, now);
   const meta = bookingStatusMeta[status];
   const actions = availableActions(
     {
@@ -27,6 +28,7 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
       customerId: booking.customer_id,
       companionId: booking.companion_id,
       startsAt,
+      endsAt,
       hasReview: booking.review !== null,
     },
     viewer,
@@ -34,6 +36,8 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
   );
   const parties = { customerId: booking.customer_id, companionId: booking.companion_id };
   const viewerIsCustomer = viewer.id === booking.customer_id;
+  const viewerIsCompanion = viewer.id === booking.companion_id;
+  const overFinish = booking.status === "in_progress" && now.getTime() >= endsAt.getTime();
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,6 +80,24 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
               </ButtonLink>
             </div>
           </div>
+        )}
+        {status === "overdue" && viewerIsCustomer && (
+          <p className="rounded-control bg-yamabuki-bg px-4 py-3 text-sumi">
+            ถ้าผู้ช่วยยังไม่มา ลองโทรหาผู้ช่วยก่อน หากติดต่อไม่ได้ กด “ผู้ช่วยไม่มาตามนัด” เพื่อปิดนัดนี้
+            ไม่มีการคิดค่าบริการ และผู้ดูแลระบบจะเห็นรายการนี้ ถ้าได้รับบริการครบแล้วแต่ผู้ช่วยลืมกด
+            ให้กด “ยืนยันว่าจบงานแล้ว” หลังเวลาสิ้นสุด
+          </p>
+        )}
+        {status === "overdue" && viewerIsCompanion && (
+          <p className="rounded-control bg-yamabuki-bg px-4 py-3 text-sumi">
+            เลยเวลานัดแล้ว ถ้าคุณพบผู้ใช้บริการแล้ว กด “เริ่มงาน” ทันที ถ้ายังไม่กด
+            ผู้ใช้บริการสามารถแจ้งว่าผู้ช่วยไม่มาตามนัดได้
+          </p>
+        )}
+        {overFinish && viewerIsCustomer && (
+          <p className="rounded-control bg-sora-50 px-4 py-3 text-sumi">
+            เลยเวลาสิ้นสุดที่จองไว้แล้ว ถ้าบริการเสร็จแล้วแต่ผู้ช่วยยังไม่กดจบงาน คุณยืนยันเองได้ แล้วให้คะแนนผู้ช่วยต่อ
+          </p>
         )}
         {booking.status === "cancelled" && booking.cancel_reason && (
           <p className="rounded-control bg-beni-bg px-4 py-3 text-beni">เหตุผล: {booking.cancel_reason}</p>

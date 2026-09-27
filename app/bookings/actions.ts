@@ -16,6 +16,8 @@ const allowedRoles = {
   complete: ["companion"],
   cancel: ["customer", "companion", "admin"],
   review: ["customer"],
+  no_show: ["customer"],
+  confirm_complete: ["customer"],
 } as const;
 
 export async function bookingAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -52,6 +54,10 @@ export async function bookingAction(_prev: ActionState, formData: FormData): Pro
         return supabase.rpc("complete_booking", { p_booking_id: input.bookingId });
       case "cancel":
         return supabase.rpc("cancel_booking", { p_booking_id: input.bookingId, p_reason: input.note || undefined });
+      case "no_show":
+        return supabase.rpc("report_no_show", { p_booking_id: input.bookingId });
+      case "confirm_complete":
+        return supabase.rpc("confirm_completion", { p_booking_id: input.bookingId });
       case "review":
         return supabase.rpc("submit_review", {
           p_booking_id: input.bookingId,
