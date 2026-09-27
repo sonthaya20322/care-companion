@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const errorText: Record<string, string> = {
   oauth: "เชื่อมต่อ Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
   callback: "เข้าสู่ระบบไม่สำเร็จ ลิงก์อาจหมดอายุ กรุณากดเข้าสู่ระบบใหม่",
+  provider: "Google ยืนยันตัวตนไม่สำเร็จ กรุณาลองใหม่ หากยังไม่ได้ กรุณาติดต่อผู้ดูแลระบบ",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {

@@ -10,6 +10,16 @@ export async function GET(request: NextRequest) {
   const base = siteUrl();
 
   if (!code) {
+    const params = request.nextUrl.searchParams;
+    const providerError = params.get("error");
+    if (providerError) {
+      console.error("OAuth provider returned an error", {
+        error: providerError,
+        code: params.get("error_code"),
+        description: params.get("error_description")?.slice(0, 200),
+      });
+      return NextResponse.redirect(`${base}/login?error=provider`);
+    }
     return NextResponse.redirect(`${base}/login?error=callback`);
   }
 
