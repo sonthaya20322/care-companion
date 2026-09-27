@@ -47,6 +47,8 @@ export type DashboardStats = {
   suspended_users: number;
   companions_by_status: Record<string, number>;
   bookings_by_status: Record<string, number>;
+  expired_requests: number;
+  overdue_jobs: number;
   bookings_last_14_days: { day: string; total: number }[];
   bookings_by_errand: { name: string; total: number }[];
   completed_revenue_estimate: number;
@@ -72,11 +74,19 @@ export function parseDashboardStats(raw: unknown): DashboardStats {
     suspended_users: toNumber(r.suspended_users),
     companions_by_status: toCounts(r.companions_by_status),
     bookings_by_status: toCounts(r.bookings_by_status),
+    expired_requests: toNumber(r.expired_requests),
+    overdue_jobs: toNumber(r.overdue_jobs),
     bookings_last_14_days: list(r.bookings_last_14_days).map((d) => ({ day: String(d.day), total: toNumber(d.total) })),
     bookings_by_errand: list(r.bookings_by_errand).map((d) => ({ name: String(d.name), total: toNumber(d.total) })),
     completed_revenue_estimate: toNumber(r.completed_revenue_estimate),
     average_rating: toNumber(r.average_rating),
   };
+}
+
+/** Bookings still in play: live requests, accepted and in-progress jobs (expired requests excluded). */
+export function activeBookingCount(stats: Pick<DashboardStats, "bookings_by_status" | "expired_requests">): number {
+  const stored = sumCounts(stats.bookings_by_status, ["requested", "accepted", "in_progress"]);
+  return Math.max(0, stored - stats.expired_requests);
 }
 
 export function sumCounts(counts: Record<string, number>, keys?: string[]): number {

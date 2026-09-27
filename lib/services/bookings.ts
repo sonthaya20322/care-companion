@@ -1,4 +1,5 @@
 import type { BookingStatus } from "@/lib/domain/booking";
+import type { BookingQuery } from "@/lib/domain/booking-list";
 import { createClient } from "@/lib/supabase/server";
 import { getDistrictLabels, getErrandTypes } from "./catalog";
 
@@ -99,13 +100,20 @@ export async function getPeople(ids: string[]): Promise<Map<string, PersonSummar
 }
 
 export async function listBookings(
-  filter: { customerId?: string; companionId?: string; status?: BookingStatus; limit?: number } = {},
+  filter: { customerId?: string; companionId?: string; query?: BookingQuery; limit?: number } = {},
 ) {
   const supabase = await createClient();
   let query = supabase.from("bookings").select(columns).order("starts_at", { ascending: false }).limit(filter.limit ?? 100);
   if (filter.customerId) query = query.eq("customer_id", filter.customerId);
   if (filter.companionId) query = query.eq("companion_id", filter.companionId);
-  if (filter.status) query = query.eq("status", filter.status);
+  const q = filter.query;
+  if (q) {
+    query = query.eq("status", q.status);
+    if (q.companion === "none") query = query.is("companion_id", null);
+    if (q.companion === "assigned") query = query.not("companion_id", "is", null);
+    if (q.startsAfter) query = query.gt("starts_at", q.startsAfter.toISOString());
+    if (q.startsAtOrBefore) query = query.lte("starts_at", q.startsAtOrBefore.toISOString());
+  }
   const { data, error } = await query;
   if (error) fail("listBookings", error);
   return decorate(data ?? []);

@@ -1,4 +1,31 @@
-import { displayStatus, rangesOverlap, type BookingStatus, type DisplayStatus } from "./booking";
+import { bookingRules, displayStatus, rangesOverlap, type BookingStatus, type DisplayStatus } from "./booking";
+
+export type BookingQuery = {
+  status: BookingStatus;
+  companion?: "none" | "assigned";
+  startsAfter?: Date;
+  startsAtOrBefore?: Date;
+};
+
+/** Translates a status people see (e.g. "expired") into the stored status plus a time window. */
+export function queryForDisplayStatus(status: DisplayStatus, now: Date): BookingQuery {
+  const deadline = new Date(now.getTime() + bookingRules.requestDeadlineHours * 60 * 60 * 1000);
+  const noShow = new Date(now.getTime() - bookingRules.noShowAfterMinutes * 60 * 1000);
+  switch (status) {
+    case "requested":
+      return { status: "requested", companion: "assigned", startsAfter: deadline };
+    case "open":
+      return { status: "requested", companion: "none", startsAfter: deadline };
+    case "expired":
+      return { status: "requested", startsAtOrBefore: deadline };
+    case "accepted":
+      return { status: "accepted", startsAfter: noShow };
+    case "overdue":
+      return { status: "accepted", startsAtOrBefore: noShow };
+    default:
+      return { status };
+  }
+}
 
 type Timed = { starts_at: string; ends_at: string };
 

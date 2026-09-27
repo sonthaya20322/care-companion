@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { errandTypeSchema, parseDashboardStats, reviewDecisionSchema, sanitizeSearch, sumCounts } from "./admin";
+import {
+  activeBookingCount,
+  errandTypeSchema,
+  parseDashboardStats,
+  reviewDecisionSchema,
+  sanitizeSearch,
+  sumCounts,
+} from "./admin";
 
 const id = "3f1c2b8a-5d7e-4a3b-9c1d-2e4f6a8b0c1d";
 
@@ -83,5 +90,19 @@ describe("sumCounts", () => {
   it("sums all or selected keys", () => {
     expect(sumCounts({ a: 1, b: 2, c: 3 })).toBe(6);
     expect(sumCounts({ a: 1, b: 2, c: 3 }, ["a", "c"])).toBe(4);
+  });
+});
+
+describe("activeBookingCount", () => {
+  it("does not count expired requests as active (bug A1)", () => {
+    const bookings_by_status = { requested: 5, accepted: 2, in_progress: 1, completed: 9 };
+    expect(activeBookingCount({ bookings_by_status, expired_requests: 3 })).toBe(5);
+    expect(activeBookingCount({ bookings_by_status, expired_requests: 0 })).toBe(8);
+  });
+
+  it("reads the new counts from the RPC", () => {
+    const stats = parseDashboardStats({ expired_requests: "2", overdue_jobs: 1 });
+    expect(stats.expired_requests).toBe(2);
+    expect(stats.overdue_jobs).toBe(1);
   });
 });

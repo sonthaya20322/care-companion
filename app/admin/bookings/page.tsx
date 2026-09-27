@@ -4,21 +4,32 @@ import { BookingCard } from "@/components/bookings/BookingCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Field";
-import { bookingStatusMeta, type BookingStatus } from "@/lib/domain/booking";
+import { bookingStatusMeta, type DisplayStatus } from "@/lib/domain/booking";
+import { queryForDisplayStatus } from "@/lib/domain/booking-list";
 import { getPeople, listBookings } from "@/lib/services/bookings";
 import { requireRole } from "@/lib/services/guard";
 
 export const metadata: Metadata = { title: "นัดหมายทั้งหมด" };
 
-const statuses: BookingStatus[] = ["requested", "accepted", "in_progress", "completed", "rejected", "cancelled"];
+const statuses: DisplayStatus[] = [
+  "requested",
+  "open",
+  "expired",
+  "accepted",
+  "overdue",
+  "in_progress",
+  "completed",
+  "rejected",
+  "cancelled",
+];
 
 export default async function AdminBookingsPage({ searchParams }: PageProps<"/admin/bookings">) {
   await requireRole("admin", "/admin/bookings");
   const params = await searchParams;
   const status = statuses.find((s) => s === params.status);
-  const bookings = await listBookings({ status, limit: 200 });
-  const people = await getPeople(bookings.map((b) => b.customer_id));
   const now = new Date();
+  const bookings = await listBookings({ query: status ? queryForDisplayStatus(status, now) : undefined, limit: 200 });
+  const people = await getPeople(bookings.flatMap((b) => [b.customer_id, b.companion_id ?? ""]));
 
   return (
     <>
@@ -54,6 +65,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
               href={`/admin/bookings/${b.id}`}
               counterpart={people.get(b.customer_id) ?? null}
               counterpartFallback="ผู้ใช้บริการ"
+              extra={`ผู้ช่วย: ${b.companion_id ? (people.get(b.companion_id)?.full_name ?? "-") : "ยังไม่มีผู้รับงาน"}`}
               now={now}
             />
           ))}

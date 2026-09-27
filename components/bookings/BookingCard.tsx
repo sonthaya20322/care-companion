@@ -10,10 +10,12 @@ type Props = {
   href: string;
   counterpart: PersonSummary | null;
   counterpartFallback: string;
+  /** Extra line under the counterpart, e.g. the companion's name in the admin list. */
+  extra?: string;
   now: Date;
 };
 
-export function BookingCard({ booking, href, counterpart, counterpartFallback, now }: Props) {
+export function BookingCard({ booking, href, counterpart, counterpartFallback, extra, now }: Props) {
   const meta =
     bookingStatusMeta[
       displayStatus({ status: booking.status, startsAt: new Date(booking.starts_at), companionId: booking.companion_id }, now)
@@ -34,6 +36,7 @@ export function BookingCard({ booking, href, counterpart, counterpartFallback, n
             <p className="truncate text-sm text-sumi-soft">
               {counterpart?.full_name ?? counterpartFallback} · {booking.destination_name}
             </p>
+            {extra && <p className="truncate text-sm text-sumi-soft">{extra}</p>}
           </div>
         </div>
         <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">

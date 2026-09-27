@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeading } from "@/components/area/AreaShell";
 import { Card } from "@/components/ui/Card";
-import { sumCounts } from "@/lib/domain/admin";
+import { activeBookingCount, sumCounts } from "@/lib/domain/admin";
 import { formatBaht } from "@/lib/domain/booking";
 import { getDashboardStats } from "@/lib/services/admin";
 import { requireRole } from "@/lib/services/guard";
@@ -14,7 +14,7 @@ export default async function AdminHomePage() {
   await requireRole("admin", "/admin");
   const stats = await getDashboardStats();
   const pending = stats.companions_by_status.pending ?? 0;
-  const active = sumCounts(stats.bookings_by_status, ["requested", "accepted", "in_progress"]);
+  const active = activeBookingCount(stats);
   const maxDay = Math.max(1, ...stats.bookings_last_14_days.map((d) => d.total));
   const maxErrand = Math.max(1, ...stats.bookings_by_errand.map((d) => d.total));
 
@@ -32,6 +32,17 @@ export default async function AdminHomePage() {
             <span aria-hidden>→</span>
           </Link>
         )}
+        {stats.overdue_jobs > 0 && (
+          <Link
+            href="/admin/bookings?status=overdue"
+            className="animate-rise flex items-center justify-between gap-4 rounded-card bg-yamabuki-bg p-5 text-yamabuki ring-1 ring-yamabuki/25 transition-shadow hover:shadow-soft"
+          >
+            <span className="font-medium">
+              มีนัด {stats.overdue_jobs} รายการที่เลยเวลานัดแล้วแต่ผู้ช่วยยังไม่เริ่มงาน
+            </span>
+            <span aria-hidden>→</span>
+          </Link>
+        )}
 
         <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="ผู้ใช้บริการ" value={stats.users_by_role.customer ?? 0} />
@@ -40,7 +51,11 @@ export default async function AdminHomePage() {
             value={stats.companions_by_status.approved ?? 0}
             note={`ทั้งหมด ${stats.users_by_role.companion ?? 0} คน`}
           />
-          <Stat label="นัดหมายที่ดำเนินอยู่" value={active} note={`ทั้งหมด ${sumCounts(stats.bookings_by_status)} รายการ`} />
+          <Stat
+            label="นัดหมายที่ดำเนินอยู่"
+            value={active}
+            note={`ทั้งหมด ${sumCounts(stats.bookings_by_status)} รายการ · หมดเวลา ${stats.expired_requests}`}
+          />
           <Stat label="งานที่เสร็จแล้ว" value={stats.bookings_by_status.completed ?? 0} />
           <Stat label="มูลค่างานโดยประมาณ" value={formatBaht(stats.completed_revenue_estimate)} note="จากงานที่เสร็จแล้ว" />
           <Stat label="คะแนนรีวิวเฉลี่ย" value={stats.average_rating ? stats.average_rating.toFixed(2) : "-"} />

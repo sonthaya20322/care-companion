@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countByStatus, findConflict, splitBookings } from "./booking-list";
+import { countByStatus, findConflict, queryForDisplayStatus, splitBookings } from "./booking-list";
 
 const now = new Date("2026-10-01T03:00:00Z");
 const rows = [
@@ -35,6 +35,44 @@ describe("countByStatus", () => {
       in_progress: 1,
       cancelled: 1,
     });
+  });
+});
+
+describe("queryForDisplayStatus", () => {
+  it("splits stored requests into live and expired at the 1-hour deadline (bug A1)", () => {
+    expect(queryForDisplayStatus("expired", now)).toEqual({
+      status: "requested",
+      startsAtOrBefore: new Date("2026-10-01T04:00:00Z"),
+    });
+    expect(queryForDisplayStatus("requested", now)).toEqual({
+      status: "requested",
+      companion: "assigned",
+      startsAfter: new Date("2026-10-01T04:00:00Z"),
+    });
+    expect(queryForDisplayStatus("open", now).companion).toBe("none");
+  });
+
+  it("splits accepted jobs into on-time and overdue at 30 minutes past the start", () => {
+    expect(queryForDisplayStatus("overdue", now)).toEqual({
+      status: "accepted",
+      startsAtOrBefore: new Date("2026-10-01T02:30:00Z"),
+    });
+    expect(queryForDisplayStatus("accepted", now).startsAfter).toEqual(new Date("2026-10-01T02:30:00Z"));
+  });
+
+  it("passes other statuses through unchanged", () => {
+    expect(queryForDisplayStatus("cancelled", now)).toEqual({ status: "cancelled" });
+  });
+
+  it("agrees with displayStatus for every row", () => {
+    for (const row of rows) {
+      const shown = Object.keys(countByStatus([row], now))[0] as Parameters<typeof queryForDisplayStatus>[0];
+      const q = queryForDisplayStatus(shown, now);
+      const start = new Date(row.starts_at).getTime();
+      expect(q.status).toBe(row.status);
+      if (q.startsAfter) expect(start).toBeGreaterThan(q.startsAfter.getTime());
+      if (q.startsAtOrBefore) expect(start).toBeLessThanOrEqual(q.startsAtOrBefore.getTime());
+    }
   });
 });
 
