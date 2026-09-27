@@ -28,6 +28,18 @@ export function formatDate(value: string | Date): string {
   return dateFormat.format(new Date(value));
 }
 
+const clockFormat = new Intl.DateTimeFormat("en-GB", {
+  timeZone: TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** Timestamp -> "14:30" in Bangkok time. */
+export function formatClock(value: string | Date): string {
+  return `${clockFormat.format(new Date(value))} น.`;
+}
+
 /** "09:00:00" (Postgres time) -> "09:00" */
 export function formatTime(value: string): string {
   return value.slice(0, 5);

@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatHours, formatTime } from "./format";
+import { formatClock, formatDateTime, formatHours, formatTime } from "./format";
 
 describe("format", () => {
   it("shows Bangkok time even for a UTC timestamp", () => {
     expect(formatDateTime("2026-10-02T02:30:00Z")).toContain("09:30");
+  });
+
+  it("shows the Bangkok clock time of a timestamp, past midnight UTC too", () => {
+    expect(formatClock("2026-10-02T02:30:00Z")).toBe("09:30 น.");
+    expect(formatClock("2026-10-02T17:05:00Z")).toBe("00:05 น.");
   });
 
   it("trims seconds from Postgres time", () => {
