@@ -7,8 +7,9 @@ import { supabaseEnv } from "./env";
  * Create one per request; never share it between requests.
  */
 export async function createClient() {
-  const { url, publishableKey } = supabaseEnv();
+  // cookies() first: it marks the route dynamic, so a missing env var fails at request time, not the build.
   const cookieStore = await cookies();
+  const { url, publishableKey } = supabaseEnv();
 
   return createServerClient(url, publishableKey, {
     cookies: {
