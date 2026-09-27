@@ -1,4 +1,19 @@
-import { displayStatus, type BookingStatus } from "./booking";
+import { displayStatus, rangesOverlap, type BookingStatus } from "./booking";
+
+type Timed = { starts_at: string; ends_at: string };
+
+/** The first confirmed job (accepted / in progress) whose time overlaps the request; mirrors the DB exclusion constraint. */
+export function findConflict<T extends Timed & { status: BookingStatus }>(request: Timed, jobs: T[]): T | null {
+  const start = new Date(request.starts_at);
+  const end = new Date(request.ends_at);
+  return (
+    jobs.find(
+      (job) =>
+        (job.status === "accepted" || job.status === "in_progress") &&
+        rangesOverlap(start, end, new Date(job.starts_at), new Date(job.ends_at)),
+    ) ?? null
+  );
+}
 
 type Listed = { status: BookingStatus; starts_at: string };
 

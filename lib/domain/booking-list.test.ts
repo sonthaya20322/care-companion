@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countByStatus, splitBookings } from "./booking-list";
+import { countByStatus, findConflict, splitBookings } from "./booking-list";
 
 const now = new Date("2026-10-01T03:00:00Z");
 const rows = [
@@ -31,5 +31,28 @@ describe("countByStatus", () => {
       in_progress: 1,
       cancelled: 1,
     });
+  });
+});
+
+describe("findConflict", () => {
+  // Bangkok 20:30 -> 08:30 next day, the overnight job from the reported bug.
+  const job = { id: "night", status: "accepted" as const, starts_at: "2026-09-27T13:30:00Z", ends_at: "2026-09-28T01:30:00Z" };
+
+  it("finds a confirmed job that overlaps the request", () => {
+    const request = { starts_at: "2026-09-27T13:50:00Z", ends_at: "2026-09-27T14:50:00Z" };
+    expect(findConflict(request, [job])?.id).toBe("night");
+  });
+
+  it("allows back-to-back times (end == start is not an overlap)", () => {
+    const request = { starts_at: "2026-09-28T01:30:00Z", ends_at: "2026-09-28T03:30:00Z" };
+    expect(findConflict(request, [job])).toBeNull();
+  });
+
+  it("ignores jobs that do not block the calendar", () => {
+    const request = { starts_at: "2026-09-27T13:50:00Z", ends_at: "2026-09-27T14:50:00Z" };
+    for (const status of ["requested", "completed", "cancelled", "rejected"] as const) {
+      expect(findConflict(request, [{ ...job, status }])).toBeNull();
+    }
+    expect(findConflict(request, [{ ...job, status: "in_progress" as const }])?.id).toBe("night");
   });
 });

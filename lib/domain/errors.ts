@@ -59,10 +59,16 @@ export const errorMessages: Record<string, string> = {
   SLUG_TAKEN: "รหัสนี้ถูกใช้แล้ว กรุณาใช้รหัสอื่น",
 };
 
+/** Same codes worded for the companion who triggered them (the defaults speak to customers). */
+const companionMessages: Record<string, string> = {
+  COMPANION_BUSY: "คุณมีงานอื่นที่ทับช่วงเวลานี้แล้ว จึงรับงานนี้ไม่ได้",
+  COMPANION_NOT_IN_AREA: "คำขอนี้อยู่นอกพื้นที่ที่คุณให้บริการ",
+};
+
 export const fallbackErrorMessage = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
 
 /** Pulls a known error code out of a Supabase/PostgREST error and returns a Thai message. */
-export function toUserMessage(error: unknown): string {
+export function toUserMessage(error: unknown, audience?: "companion"): string {
   const message =
     typeof error === "object" && error !== null && "message" in error
       ? String((error as { message: unknown }).message)
@@ -70,5 +76,6 @@ export function toUserMessage(error: unknown): string {
         ? error
         : "";
   const code = message.match(/\b[A-Z][A-Z_]{3,}\b/)?.[0];
-  return (code && errorMessages[code]) || fallbackErrorMessage;
+  if (!code) return fallbackErrorMessage;
+  return (audience === "companion" && companionMessages[code]) || errorMessages[code] || fallbackErrorMessage;
 }

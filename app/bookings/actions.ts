@@ -63,7 +63,7 @@ export async function bookingAction(_prev: ActionState, formData: FormData): Pro
 
   if (error) {
     console.error("booking action failed", { action: input.action, code: error.code });
-    return { message: toUserMessage(error) };
+    return { message: toUserMessage(error, profile.role === "companion" ? "companion" : undefined) };
   }
 
   if (input.action === "claim" || input.action === "accept") {

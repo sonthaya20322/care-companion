@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatDateTime, formatHours } from "@/lib/utils/format";
+import { formatClock, formatDateTime, formatHours } from "@/lib/utils/format";
 
 type Props = {
   errandName: string;
@@ -10,11 +10,24 @@ type Props = {
   details: string | null;
   specialNeeds: string | null;
   meta?: ReactNode;
+  /** The companion's own confirmed job that overlaps this request, if any. */
+  conflict?: { starts_at: string; ends_at: string } | null;
   children: ReactNode;
 };
 
 /** A request a companion can act on straight from the list. */
-export function RequestCard({ errandName, startsAt, durationHours, pickup, destination, details, specialNeeds, meta, children }: Props) {
+export function RequestCard({
+  errandName,
+  startsAt,
+  durationHours,
+  pickup,
+  destination,
+  details,
+  specialNeeds,
+  meta,
+  conflict,
+  children,
+}: Props) {
   return (
     <li className="flex flex-col gap-4 rounded-card bg-washi-surface p-5 shadow-soft ring-1 ring-washi-line">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -48,6 +61,12 @@ export function RequestCard({ errandName, startsAt, durationHours, pickup, desti
           </div>
         )}
       </dl>
+      {conflict && (
+        <p className="rounded-control bg-yamabuki-bg px-4 py-3 text-sm text-sumi">
+          <span className="font-medium">ทับกับงานของคุณ</span> {formatDateTime(conflict.starts_at)} –{" "}
+          {formatClock(conflict.ends_at)} จึงรับงานนี้ไม่ได้
+        </p>
+      )}
       {children}
     </li>
   );

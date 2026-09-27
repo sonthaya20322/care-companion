@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/Avatar";
+import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StatusStamp } from "@/components/ui/StatusStamp";
 import { availableActions, bookingStatusMeta, displayStatus, formatBaht, type Actor } from "@/lib/domain/booking";
@@ -62,6 +63,20 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
           <StatusStamp tone={meta.tone} label={meta.label} stamp={justCreated} />
         </div>
         <p className="text-sumi-soft">{meta.description}</p>
+        {status === "expired" && viewerIsCustomer && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control bg-yamabuki-bg px-4 py-3">
+            <p className="text-sumi">
+              คำขอนี้ปิดแล้ว ไม่มีการคิดค่าบริการ หากยังต้องการผู้ช่วย ลองจองใหม่โดยเลือกเวลาล่วงหน้ามากขึ้น
+              หรือเลือกผู้ช่วยจากหน้าค้นหาโดยตรง
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/customer/book">จองใหม่</ButtonLink>
+              <ButtonLink href="/companions" variant="secondary">
+                ค้นหาผู้ช่วย
+              </ButtonLink>
+            </div>
+          </div>
+        )}
         {booking.status === "cancelled" && booking.cancel_reason && (
           <p className="rounded-control bg-beni-bg px-4 py-3 text-beni">เหตุผล: {booking.cancel_reason}</p>
         )}

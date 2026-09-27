@@ -98,7 +98,7 @@ export function availableActions(booking: BookingSnapshot, actor: Actor, now: Da
   }
 
   if (actor.role === "customer" && booking.customerId === actor.id) {
-    if (booking.status === "requested") actions.push("cancel");
+    if (booking.status === "requested" && notStarted) actions.push("cancel");
     if (booking.status === "accepted" && msToStart >= bookingRules.customerCancelCutoffHours * HOUR) {
       actions.push("cancel");
     }

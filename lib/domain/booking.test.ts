@@ -109,6 +109,11 @@ describe("availableActions", () => {
     expect(availableActions(booking({ status: "accepted", startsAt: hours(1.5) }), customer, now)).toEqual([]);
   });
 
+  it("does not offer cancel on an expired request (nothing left to cancel)", () => {
+    expect(availableActions(booking({ status: "requested", startsAt: hours(1) }), customer, now)).toEqual(["cancel"]);
+    expect(availableActions(booking({ status: "requested", startsAt: hours(-1) }), customer, now)).toEqual([]);
+  });
+
   it("offers a review once, after completion", () => {
     expect(availableActions(booking({ status: "completed" }), customer, now)).toEqual(["review"]);
     expect(availableActions(booking({ status: "completed", hasReview: true }), customer, now)).toEqual([]);
@@ -140,6 +145,15 @@ describe("roles", () => {
 describe("toUserMessage", () => {
   it("maps database error codes to Thai", () => {
     expect(toUserMessage({ message: "COMPANION_BUSY" })).toBe("ผู้ช่วยมีนัดหมายอื่นในช่วงเวลานี้แล้ว");
+  });
+
+  it("words companion-triggered codes for the companion", () => {
+    expect(toUserMessage({ message: "COMPANION_BUSY" }, "companion")).toBe(
+      "คุณมีงานอื่นที่ทับช่วงเวลานี้แล้ว จึงรับงานนี้ไม่ได้",
+    );
+    expect(toUserMessage({ message: "BOOKING_NOT_AVAILABLE" }, "companion")).toBe(
+      "คำขอนี้มีผู้ช่วยรับไปแล้ว หรือหมดเวลาแล้ว",
+    );
   });
 
   it("falls back to a generic message for unknown errors", () => {
