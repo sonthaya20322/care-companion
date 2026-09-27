@@ -47,6 +47,11 @@ export const errorMessages: Record<string, string> = {
   INVALID_FILE: "ไฟล์ไม่ถูกต้อง กรุณาเลือกรูปภาพ (JPG, PNG, WEBP) หรือ PDF ตามที่กำหนด",
   FILE_TOO_LARGE: "ไฟล์มีขนาดใหญ่เกินกำหนด",
   UPLOAD_FAILED: "อัปโหลดไฟล์ไม่สำเร็จ กรุณาลองใหม่",
+  DATE_REQUIRED: "กรุณาเลือกวันที่นัดหมาย",
+  TIME_REQUIRED: "กรุณาเลือกเวลานัดหมาย",
+  PICKUP_REQUIRED: "กรุณากรอกที่อยู่จุดรับ",
+  DESTINATION_REQUIRED: "กรุณากรอกชื่อสถานที่ปลายทาง",
+  TEXT_TOO_LONG: "ข้อความยาวเกินกำหนด",
 };
 
 export const fallbackErrorMessage = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
