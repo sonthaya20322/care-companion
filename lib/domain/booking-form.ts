@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { bookingRules, rangesOverlap, validateSchedule } from "./booking";
+import { companionRules } from "./companion";
 import { phoneSchema } from "./profile";
 
 /** Thailand has no daylight saving, so local wall time is always UTC+7. */
@@ -76,6 +77,39 @@ export function fitsAvailability(chosen: TimeRange, slots: WeeklySlot[]): boolea
   return slots.some((s) => s.day_of_week === day && minutesOf(s.start_time) <= start && end <= minutesOf(s.end_time));
 }
 
+export type AreaRates = { count: number; min: number; max: number; withinBudget: number };
+
+/**
+ * Hourly rates of the companions serving one pickup district, so an open request can show a price range.
+ * `ratesByDistrict` holds each district's rates; returns null before a district is chosen.
+ */
+export function summarizeAreaRates(
+  ratesByDistrict: Record<number, number[]>,
+  districtId: number | null,
+  budget: number | null,
+): AreaRates | null {
+  if (districtId == null) return null;
+  const rates = ratesByDistrict[districtId] ?? [];
+  if (rates.length === 0) return { count: 0, min: 0, max: 0, withinBudget: 0 };
+  return {
+    count: rates.length,
+    min: Math.min(...rates),
+    max: Math.max(...rates),
+    withinBudget: budget == null ? rates.length : rates.filter((rate) => rate <= budget).length,
+  };
+}
+
+/** Groups companions' hourly rates by each district they serve. */
+export function ratesByDistrict(companions: { hourly_rate: number; district_ids: number[] }[]): Record<number, number[]> {
+  const result: Record<number, number[]> = {};
+  for (const companion of companions) {
+    for (const districtId of companion.district_ids) {
+      (result[districtId] ??= []).push(companion.hourly_rate);
+    }
+  }
+  return result;
+}
+
 export function durationOptions(): number[] {
   const options: number[] = [];
   for (let h = bookingRules.minDurationHours; h <= bookingRules.maxDurationHours; h += bookingRules.durationStepHours) {
@@ -96,6 +130,19 @@ const optionalId = z
   .transform((v) => (v === "" ? null : Number(v)))
   .pipe(z.number().int().positive().nullable());
 
+const optionalBudget = z
+  .string()
+  .trim()
+  .transform((v) => (v === "" ? null : Number(v)))
+  .pipe(
+    z
+      .number({ error: "INVALID_BUDGET" })
+      .int("INVALID_BUDGET")
+      .min(companionRules.minRate, "INVALID_BUDGET")
+      .max(companionRules.maxRate, "INVALID_BUDGET")
+      .nullable(),
+  );
+
 export const bookingFormSchema = z
   .object({
     companionId: z
@@ -114,6 +161,7 @@ export const bookingFormSchema = z
     destinationDistrictId: optionalId,
     details: optionalText(2000, "TEXT_TOO_LONG"),
     specialNeeds: optionalText(1000, "TEXT_TOO_LONG"),
+    maxHourlyRate: optionalBudget.default(null),
   })
   .transform((value, ctx) => {
     const startsAt = bangkokLocalToDate(value.date, value.time);
@@ -121,7 +169,8 @@ export const bookingFormSchema = z
       ctx.addIssue({ code: "custom", message: "INVALID_TIME", path: ["time"] });
       return z.NEVER;
     }
-    return { ...value, startsAt };
+    // A direct request already has the chosen companion's rate, so a budget does not apply.
+    return { ...value, maxHourlyRate: value.companionId ? null : value.maxHourlyRate, startsAt };
   });
 
 export type BookingFormInput = z.infer<typeof bookingFormSchema>;

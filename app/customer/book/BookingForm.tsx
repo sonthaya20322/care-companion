@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea, describedBy } from "@/components/ui/Field";
 import { FormStatus } from "@/components/ui/FormStatus";
 import { bookingRules, computeEndsAt, estimatePrice, formatBaht } from "@/lib/domain/booking";
+import { companionRules } from "@/lib/domain/companion";
 import {
   bangkokDateString,
   bangkokLocalToDate,
@@ -14,6 +15,7 @@ import {
   durationOptions,
   fitsAvailability,
   overlappingRanges,
+  summarizeAreaRates,
   type WeeklySlot,
 } from "@/lib/domain/booking-form";
 import { errorMessages } from "@/lib/domain/errors";
@@ -35,6 +37,8 @@ type BookingFormProps = {
   defaultStart: { date: string; time: string };
   activeBookings: { startsAt: string; endsAt: string }[];
   availability: WeeklySlot[];
+  /** Companion rates per district; empty for a direct request. */
+  areaRates: Record<number, number[]>;
 };
 
 export function BookingForm({
@@ -49,6 +53,7 @@ export function BookingForm({
   defaultStart,
   activeBookings,
   availability,
+  areaRates,
 }: BookingFormProps) {
   const { state, formAction, pending, formRef, handleSubmit } = useActionForm<BookingFormState>(createBooking, {});
   const values = state.values ?? {};
@@ -65,7 +70,12 @@ export function BookingForm({
   const [date, setDate] = useState(values.date ?? defaultStart.date);
   const [time, setTime] = useState(values.time ?? defaultStart.time);
   const [duration, setDuration] = useState(Number(values.durationHours ?? 3));
+  const [pickupDistrict, setPickupDistrict] = useState(values.pickupDistrictId ?? "");
+  const [budgetText, setBudgetText] = useState(values.maxHourlyRate ?? "");
+  const budget = /^\d+$/.test(budgetText.trim()) ? Number(budgetText.trim()) : null;
   const estimate = estimatePrice(companion?.hourlyRate ?? null, duration);
+  const budgetCap = companion ? null : estimatePrice(budget, duration);
+  const rates = companion ? null : summarizeAreaRates(areaRates, pickupDistrict ? Number(pickupDistrict) : null, budget);
 
   const earliest = new Date(earliestStartIso);
   const startsAt = bangkokLocalToDate(date, time);
@@ -251,7 +261,11 @@ export function BookingForm({
             <AreaSelect
               {...input("pickupDistrictId", companion ? "hint" : undefined)}
               locations={pickupLocations}
-              defaultValue={values.pickupDistrictId}
+              value={pickupDistrict}
+              onChange={(event) => {
+                setPickupDistrict(event.target.value);
+                markEdited("pickupDistrictId");
+              }}
               required
             />
           </Field>
@@ -331,11 +345,68 @@ export function BookingForm({
         </Field>
       </fieldset>
 
+      {!companion && (
+        <fieldset className="flex flex-col gap-5">
+          <legend className="font-display text-xl text-sumi">6. งบประมาณ</legend>
+          <Field
+            id="maxHourlyRate"
+            label="งบสูงสุดต่อชั่วโมง (ไม่บังคับ)"
+            hint="เว้นว่างได้ ถ้าใส่ไว้ จะมีแค่ผู้ช่วยที่ราคาไม่เกินงบเห็นคำขอนี้ และคุณจ่ายตามราคาของผู้ช่วยที่กดรับ"
+            error={errors.maxHourlyRate}
+            className="mt-3 sm:max-w-xs"
+          >
+            <Input
+              {...input("maxHourlyRate", "hint")}
+              type="number"
+              inputMode="numeric"
+              min={companionRules.minRate}
+              max={companionRules.maxRate}
+              step={10}
+              placeholder="เช่น 300"
+              value={budgetText}
+              onChange={(event) => {
+                setBudgetText(event.target.value);
+                markEdited("maxHourlyRate");
+              }}
+            />
+          </Field>
+          <div aria-live="polite" className="rounded-control bg-sora-50 px-4 py-3 text-sm">
+            {!rates ? (
+              <p className="text-sumi-soft">เลือกเขตจุดรับในข้อ 3 เพื่อดูราคาของผู้ช่วยในพื้นที่</p>
+            ) : rates.count === 0 ? (
+              <p className="font-medium text-yamabuki">
+                ตอนนี้ยังไม่มีผู้ช่วยให้บริการในเขตนี้ คำขอจะรอจนกว่าจะมีผู้ช่วยในเขตนี้กดรับ
+              </p>
+            ) : (
+              <>
+                <p className="text-sumi">
+                  ผู้ช่วยในเขตนี้ {rates.count} คน ราคา{" "}
+                  <strong>
+                    {rates.min === rates.max
+                      ? formatBaht(rates.min)
+                      : `${formatBaht(rates.min)} – ${formatBaht(rates.max)}`}
+                  </strong>{" "}
+                  ต่อชั่วโมง
+                </p>
+                {budget != null &&
+                  (rates.withinBudget > 0 ? (
+                    <p className="text-sumi-soft">อยู่ในงบของคุณ {rates.withinBudget} คน</p>
+                  ) : (
+                    <p className="font-medium text-yamabuki">
+                      ยังไม่มีผู้ช่วยในเขตนี้ที่ราคาอยู่ในงบ ลองเพิ่มงบหรือเว้นว่างไว้ เพื่อให้มีคนเห็นคำขอ
+                    </p>
+                  ))}
+              </>
+            )}
+          </div>
+        </fieldset>
+      )}
+
       <div className="sticky bottom-0 -mx-5 flex flex-wrap items-center justify-between gap-4 border-t border-washi-line bg-washi/95 px-5 py-4 backdrop-blur-sm md:static md:mx-0 md:rounded-card md:bg-sora-50 md:px-6">
         <div>
           <p className="text-sm text-sumi-soft">ราคาประเมิน ({formatHours(duration)})</p>
           <p className="font-display text-2xl text-sakura-700" aria-live="polite">
-            {formatBaht(estimate)}
+            {budgetCap != null ? `ไม่เกิน ${formatBaht(budgetCap)}` : formatBaht(estimate)}
           </p>
           <p className="text-sm text-sumi-soft">ชำระกับผู้ช่วยโดยตรงหลังจบบริการ</p>
         </div>

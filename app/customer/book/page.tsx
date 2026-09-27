@@ -3,12 +3,12 @@ import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { PageHeading } from "@/components/area/AreaShell";
 import { formatBaht } from "@/lib/domain/booking";
-import { bangkokDateString, defaultStart, earliestStart } from "@/lib/domain/booking-form";
+import { bangkokDateString, defaultStart, earliestStart, ratesByDistrict } from "@/lib/domain/booking-form";
 import { bookingRules } from "@/lib/domain/booking";
 import { getErrandTypes, getLocations } from "@/lib/services/catalog";
 import { splitBookings } from "@/lib/domain/booking-list";
 import { listBookings } from "@/lib/services/bookings";
-import { getCompanionAvailability, getPublicCompanion } from "@/lib/services/companions";
+import { getCompanionAvailability, getPublicCompanion, listCompanionRates } from "@/lib/services/companions";
 import { requireRole } from "@/lib/services/guard";
 import { BookingForm } from "./BookingForm";
 
@@ -19,11 +19,12 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
   const params = await searchParams;
   const companionId = typeof params.companion === "string" ? params.companion : null;
 
-  const [errandTypes, locations, companion, myBookings] = await Promise.all([
+  const [errandTypes, locations, companion, myBookings, companionRates] = await Promise.all([
     getErrandTypes(),
     getLocations(),
     companionId ? getPublicCompanion(companionId) : Promise.resolve(null),
     listBookings({ customerId: profile.id }),
+    companionId ? Promise.resolve([]) : listCompanionRates(),
   ]);
   const availability = companion ? await getCompanionAvailability(companion.id) : [];
 
@@ -89,6 +90,7 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
         defaultStart={defaultStart(now)}
         activeBookings={splitBookings(myBookings, now).upcoming.map((b) => ({ startsAt: b.starts_at, endsAt: b.ends_at }))}
         availability={availability.map(({ day_of_week, start_time, end_time }) => ({ day_of_week, start_time, end_time }))}
+        areaRates={ratesByDistrict(companionRates)}
       />
     </>
   );

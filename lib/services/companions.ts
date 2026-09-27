@@ -61,6 +61,17 @@ export async function listPublicCompanions(filter: { districtIds?: number[] } = 
   return (data ?? []).map(toCompanion);
 }
 
+/** Rate and service areas of every public companion, for the price range shown on open requests. */
+export async function listCompanionRates(): Promise<{ hourly_rate: number; district_ids: number[] }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("public_companions").select("hourly_rate, district_ids").limit(5000);
+  if (error) {
+    console.error("listCompanionRates failed", { code: error.code });
+    throw new Error("listCompanionRates failed", { cause: error });
+  }
+  return (data ?? []).map((row) => ({ hourly_rate: Number(row.hourly_rate), district_ids: row.district_ids as number[] }));
+}
+
 export const getPublicCompanion = cache(async (id: string): Promise<PublicCompanion | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase.from("public_companions").select(companionColumns).eq("id", id).maybeSingle();

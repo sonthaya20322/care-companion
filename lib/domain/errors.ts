@@ -47,6 +47,8 @@ export const errorMessages: Record<string, string> = {
   BIO_TOO_LONG: "แนะนำตัวได้ไม่เกิน 1,500 ตัวอักษร",
   INVALID_EXPERIENCE: "กรุณากรอกประสบการณ์เป็นจำนวนปีเต็ม 0-60",
   INVALID_RATE: "อัตราค่าบริการต้องอยู่ระหว่าง 50-5,000 บาทต่อชั่วโมง",
+  INVALID_BUDGET: "งบต่อชั่วโมงต้องเป็นจำนวนเต็ม 50-5,000 บาท หรือเว้นว่างไว้",
+  OVER_BUDGET: "อัตราค่าบริการของผู้ช่วยเกินงบที่ตั้งไว้",
   LANGUAGE_REQUIRED: "กรุณาระบุภาษาที่สื่อสารได้อย่างน้อย 1 ภาษา",
   TOO_MANY_TAGS: "ระบุได้ไม่เกิน 10 รายการ",
   TAG_TOO_LONG: "แต่ละรายการยาวได้ไม่เกิน 40 ตัวอักษร",
@@ -71,6 +73,7 @@ export const errorMessages: Record<string, string> = {
 const companionMessages: Record<string, string> = {
   COMPANION_BUSY: "คุณมีงานอื่นที่ทับช่วงเวลานี้แล้ว จึงรับงานนี้ไม่ได้",
   COMPANION_NOT_IN_AREA: "คำขอนี้อยู่นอกพื้นที่ที่คุณให้บริการ",
+  OVER_BUDGET: "อัตราค่าบริการของคุณเกินงบที่ผู้ใช้บริการตั้งไว้ จึงรับงานนี้ไม่ได้",
 };
 
 export const fallbackErrorMessage = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";

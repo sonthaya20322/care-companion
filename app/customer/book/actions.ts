@@ -20,6 +20,7 @@ const fields = [
   "destinationDistrictId",
   "details",
   "specialNeeds",
+  "maxHourlyRate",
 ] as const;
 
 export type BookingFormState = ActionState & { values?: Partial<Record<(typeof fields)[number], string>> };
@@ -50,6 +51,7 @@ export async function createBooking(_prev: BookingFormState, formData: FormData)
     p_destination_district_id: input.destinationDistrictId,
     p_details: input.details,
     p_special_needs: input.specialNeeds,
+    p_max_hourly_rate: input.maxHourlyRate,
   });
 
   if (error || typeof bookingId !== "string") {

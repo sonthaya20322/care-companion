@@ -10,6 +10,8 @@ import {
   fitsAvailability,
   overlappingRanges,
   parseBookingForm,
+  ratesByDistrict,
+  summarizeAreaRates,
 } from "./booking-form";
 
 const now = new Date("2026-10-01T01:00:00Z"); // 08:00 in Bangkok
@@ -94,6 +96,35 @@ describe("parseBookingForm", () => {
     if (!result.success) expect(result.error.issues.map((i) => i.message)).toContain(code);
   });
 
+  it("treats an empty or missing budget as any rate", () => {
+    const empty = parseBookingForm({ ...base, maxHourlyRate: " " }, now);
+    const missing = parseBookingForm(base, now);
+    expect(empty.success && empty.data.maxHourlyRate).toBeNull();
+    expect(missing.success && missing.data.maxHourlyRate).toBeNull();
+  });
+
+  it("keeps a budget on an open request", () => {
+    const result = parseBookingForm({ ...base, maxHourlyRate: "300" }, now);
+    expect(result.success && result.data.maxHourlyRate).toBe(300);
+  });
+
+  it("drops the budget on a direct request, where the companion's rate is already known", () => {
+    const result = parseBookingForm(
+      { ...base, companionId: "3f1c2b8a-5d7e-4a3b-9c1d-2e4f6a8b0c1d", maxHourlyRate: "300" },
+      now,
+    );
+    expect(result.success && result.data.maxHourlyRate).toBeNull();
+  });
+
+  it.each(["49", "5001", "250.5", "abc"])("rejects budget %s with INVALID_BUDGET", (maxHourlyRate) => {
+    const result = parseBookingForm({ ...base, maxHourlyRate }, now);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((i) => i.message)).toContain("INVALID_BUDGET");
+      expect(result.error.issues[0].path).toEqual(["maxHourlyRate"]);
+    }
+  });
+
   it("points start-time problems at the field the user should change", () => {
     const soon = parseBookingForm({ ...base, date: "2026-10-01", time: "09:30" }, now);
     const far = parseBookingForm({ ...base, date: "2026-12-15" }, now);
@@ -155,5 +186,31 @@ describe("booking warnings", () => {
 
   it("has nothing to say when the companion has not set any hours", () => {
     expect(fitsAvailability(range("2026-10-02", "09:00", "12:00"), [])).toBeNull();
+  });
+});
+
+describe("area price range for open requests", () => {
+  const rates = ratesByDistrict([
+    { hourly_rate: 200, district_ids: [1006, 1007] },
+    { hourly_rate: 350, district_ids: [1006] },
+    { hourly_rate: 250, district_ids: [1006] },
+  ]);
+
+  it("groups rates under every district a companion serves", () => {
+    expect(rates).toEqual({ 1006: [200, 350, 250], 1007: [200] });
+  });
+
+  it("summarises the range and counts everyone when there is no budget", () => {
+    expect(summarizeAreaRates(rates, 1006, null)).toEqual({ count: 3, min: 200, max: 350, withinBudget: 3 });
+  });
+
+  it("counts companions at or under the budget", () => {
+    expect(summarizeAreaRates(rates, 1006, 250)?.withinBudget).toBe(2);
+    expect(summarizeAreaRates(rates, 1006, 100)?.withinBudget).toBe(0);
+  });
+
+  it("reports an empty district and nothing before a district is chosen", () => {
+    expect(summarizeAreaRates(rates, 9999, 300)).toEqual({ count: 0, min: 0, max: 0, withinBudget: 0 });
+    expect(summarizeAreaRates(rates, null, 300)).toBeNull();
   });
 });

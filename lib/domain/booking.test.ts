@@ -225,6 +225,9 @@ describe("toUserMessage", () => {
     expect(toUserMessage({ message: "BOOKING_NOT_AVAILABLE" }, "companion")).toBe(
       "คำขอนี้มีผู้ช่วยรับไปแล้ว หรือหมดเวลาแล้ว",
     );
+    expect(toUserMessage({ message: "OVER_BUDGET" }, "companion")).toBe(
+      "อัตราค่าบริการของคุณเกินงบที่ผู้ใช้บริการตั้งไว้ จึงรับงานนี้ไม่ได้",
+    );
   });
 
   it("falls back to a generic message for unknown errors", () => {

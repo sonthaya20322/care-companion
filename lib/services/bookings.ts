@@ -19,6 +19,8 @@ export type Booking = {
   special_needs: string | null;
   hourly_rate: number | null;
   estimated_price: number | null;
+  /** Customer budget per hour on an open request; null = any rate. */
+  max_hourly_rate: number | null;
   status: BookingStatus;
   cancel_reason: string | null;
   cancelled_by: string | null;
@@ -52,7 +54,7 @@ export type BookingDetail = BookingView & {
 };
 
 const columns =
-  "id, customer_id, companion_id, errand_type_id, starts_at, ends_at, duration_hours, pickup_district_id, destination_name, destination_address, destination_district_id, details, special_needs, hourly_rate, estimated_price, status, cancel_reason, cancelled_by, reopened_as, created_at";
+  "id, customer_id, companion_id, errand_type_id, starts_at, ends_at, duration_hours, pickup_district_id, destination_name, destination_address, destination_district_id, details, special_needs, hourly_rate, estimated_price, max_hourly_rate, status, cancel_reason, cancelled_by, reopened_as, created_at";
 
 function fail(what: string, error: { code?: string }): never {
   console.error(`${what} failed`, { code: error.code });
@@ -73,6 +75,7 @@ async function decorate(rows: Record<string, unknown>[]): Promise<BookingView[]>
       duration_hours: Number(b.duration_hours),
       hourly_rate: toNumberOrNull(b.hourly_rate),
       estimated_price: toNumberOrNull(b.estimated_price),
+      max_hourly_rate: toNumberOrNull(b.max_hourly_rate),
       errandName: errandNames.get(b.errand_type_id) ?? "ธุระ",
       pickupLabel: labels.get(b.pickup_district_id) ?? "-",
       destinationLabel: b.destination_district_id ? (labels.get(b.destination_district_id) ?? null) : null,

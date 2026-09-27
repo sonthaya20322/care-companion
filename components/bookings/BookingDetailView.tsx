@@ -161,6 +161,11 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
             </Detail>
             <Detail label="ค่าบริการโดยประมาณ">
               {formatBaht(booking.estimated_price)}
+              {booking.estimated_price == null && booking.max_hourly_rate != null && (
+                <span className="block text-sm text-sumi-soft">
+                  งบไม่เกิน {formatBaht(booking.max_hourly_rate)} ต่อชั่วโมง
+                </span>
+              )}
               <span className="block text-sm text-sumi-soft">ชำระกับผู้ช่วยโดยตรง</span>
             </Detail>
             {booking.contact && (
