@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { areaFilterValue, districtIdsFor, parseAreaFilter } from "./area";
+import { areaFilterLabel, areaFilterValue, districtIdsFor, parseAreaFilter } from "./area";
 
 const provinces = [
   { id: 10, districts: [{ id: 1001 }, { id: 1002 }] },
@@ -31,5 +31,23 @@ describe("districtIdsFor", () => {
 
   it("returns undefined for all areas", () => {
     expect(districtIdsFor({ kind: "all" }, provinces)).toBeUndefined();
+  });
+});
+
+describe("areaFilterLabel", () => {
+  const named = [
+    { id: 10, name_th: "กรุงเทพมหานคร", districts: [{ id: 1001, name_th: "พระนคร" }] },
+    { id: 11, name_th: "สมุทรปราการ", districts: [{ id: 1101, name_th: "พระประแดง" }] },
+  ];
+
+  it("names the whole province or the district with its province", () => {
+    expect(areaFilterLabel({ kind: "province", id: 10 }, named)).toBe("ทั้งกรุงเทพมหานคร");
+    expect(areaFilterLabel({ kind: "district", id: 1101 }, named)).toBe("พระประแดง, สมุทรปราการ");
+  });
+
+  it("returns null for all areas or unknown ids", () => {
+    expect(areaFilterLabel({ kind: "all" }, named)).toBeNull();
+    expect(areaFilterLabel({ kind: "province", id: 99 }, named)).toBeNull();
+    expect(areaFilterLabel({ kind: "district", id: 9999 }, named)).toBeNull();
   });
 });

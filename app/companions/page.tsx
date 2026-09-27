@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
+import { AreaFilterForm } from "@/components/companions/AreaFilterForm";
 import { CompanionCard } from "@/components/companions/CompanionCard";
-import { AreaSelect } from "@/components/companions/AreaSelect";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Field } from "@/components/ui/Field";
-import { SubmitButton } from "@/components/ui/SubmitButton";
-import { areaFilterValue, districtIdsFor, parseAreaFilter } from "@/lib/domain/area";
+import { areaFilterLabel, areaFilterValue, districtIdsFor, parseAreaFilter } from "@/lib/domain/area";
 import { getDistrictLabels, getLocations } from "@/lib/services/catalog";
 import { listPublicCompanions } from "@/lib/services/companions";
 
@@ -20,6 +18,7 @@ export default async function CompanionsPage({ searchParams }: PageProps<"/compa
   const [locations, labels] = await Promise.all([getLocations(), getDistrictLabels()]);
   const districtIds = districtIdsFor(filter, locations);
   const companions = districtIds?.length === 0 ? [] : await listPublicCompanions({ districtIds });
+  const areaLabel = areaFilterLabel(filter, locations);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-12">
@@ -30,15 +29,10 @@ export default async function CompanionsPage({ searchParams }: PageProps<"/compa
         </p>
       </div>
 
-      <form method="get" className="mt-8 flex flex-col gap-3 rounded-card bg-sora-50 p-5 sm:flex-row sm:items-end">
-        <Field id="area" label="พื้นที่จุดรับ" className="flex-1">
-          <AreaSelect id="area" name="area" locations={locations} allowProvince defaultValue={areaFilterValue(filter)} />
-        </Field>
-        <SubmitButton>ค้นหา</SubmitButton>
-      </form>
+      <AreaFilterForm key={areaFilterValue(filter)} locations={locations} defaultValue={areaFilterValue(filter)} />
 
       <p className="mt-8 text-sumi-soft" aria-live="polite">
-        พบผู้ช่วย {companions.length} คน
+        พบผู้ช่วย {companions.length} คน {areaLabel ? <>ที่ให้บริการใน<strong className="text-sumi">{areaLabel}</strong></> : "(ทุกพื้นที่)"}
       </p>
 
       {companions.length === 0 ? (

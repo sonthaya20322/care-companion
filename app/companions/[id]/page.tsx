@@ -13,7 +13,7 @@ import { dayNames, formatDate, formatTime } from "@/lib/utils/format";
 export async function generateMetadata({ params }: PageProps<"/companions/[id]">): Promise<Metadata> {
   const { id } = await params;
   const companion = await getPublicCompanion(id);
-  return { title: companion ? `ผู้ช่วย ${companion.full_name}` : "ไม่พบผู้ช่วย" };
+  return { title: companion ? `ผู้ช่วย ${companion.display_name}` : "ไม่พบผู้ช่วย" };
 }
 
 export default async function CompanionDetailPage({ params }: PageProps<"/companions/[id]">) {
@@ -37,9 +37,9 @@ export default async function CompanionDetailPage({ params }: PageProps<"/compan
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-8">
           <header className="animate-rise flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-            <Avatar name={companion.full_name} src={companion.avatar_url} size="lg" />
+            <Avatar name={companion.display_name} src={companion.avatar_url} size="lg" />
             <div>
-              <h1 className="text-3xl text-sumi md:text-4xl">{companion.full_name}</h1>
+              <h1 className="text-3xl text-sumi md:text-4xl">{companion.display_name}</h1>
               <p className="mt-1 text-sumi-soft">
                 ผู้ช่วยร่วมเดินทาง · ประสบการณ์{" "}
                 {companion.experience_years > 0 ? `${companion.experience_years} ปี` : "น้อยกว่า 1 ปี"}

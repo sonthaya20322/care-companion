@@ -16,11 +16,11 @@ export function CompanionCard({ companion, areaLabels }: CompanionCardProps) {
   return (
     <article className="group relative flex h-full flex-col rounded-card bg-washi-surface p-6 shadow-soft ring-1 ring-washi-line transition-[transform,box-shadow] duration-200 ease-out-quart hover:-translate-y-0.5 hover:shadow-lift">
       <div className="flex items-start gap-4">
-        <Avatar name={companion.full_name} src={companion.avatar_url} />
+        <Avatar name={companion.display_name} src={companion.avatar_url} />
         <div className="min-w-0 flex-1">
           <h3 className="text-xl text-sumi">
             <Link href={`/companions/${companion.id}`} className="after:absolute after:inset-0 after:rounded-card">
-              {companion.full_name}
+              {companion.display_name}
             </Link>
           </h3>
           <p className="text-sumi-soft">

@@ -55,9 +55,9 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
 
       {companion ? (
         <div className="mb-8 flex flex-wrap items-center gap-4 rounded-card bg-sakura-50 p-5">
-          <Avatar name={companion.full_name} src={companion.avatar_url} />
+          <Avatar name={companion.display_name} src={companion.avatar_url} />
           <div className="flex-1">
-            <p className="font-display text-lg text-sumi">{companion.full_name}</p>
+            <p className="font-display text-lg text-sumi">{companion.display_name}</p>
             <p className="text-sumi-soft">{formatBaht(companion.hourly_rate)} / ชั่วโมง</p>
           </div>
           <Link href="/customer/book" className="text-sora-700 underline underline-offset-4">
@@ -77,7 +77,7 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
         errandTypes={errandTypes.filter((type) => type.is_active)}
         pickupLocations={pickupLocations}
         allLocations={locations}
-        companion={companion ? { id: companion.id, name: companion.full_name, hourlyRate: companion.hourly_rate } : null}
+        companion={companion ? { id: companion.id, name: companion.display_name, hourlyRate: companion.hourly_rate } : null}
         defaultPhone={profile.phone ?? ""}
         minDate={minDate}
         maxDate={maxDate}

@@ -86,12 +86,14 @@ export async function getPeople(ids: string[]): Promise<Map<string, PersonSummar
 
   const supabase = await createClient();
   const [publicRows, profileRows] = await Promise.all([
-    supabase.from("public_companions").select("id, full_name, avatar_url").in("id", unique),
+    supabase.from("public_companions").select("id, display_name, avatar_url").in("id", unique),
     supabase.from("profiles").select("id, full_name, avatar_url, phone").in("id", unique),
   ]);
   if (publicRows.error) fail("getPeople public", publicRows.error);
   if (profileRows.error) fail("getPeople profiles", profileRows.error);
-  for (const row of publicRows.data ?? []) people.set(row.id, row as PersonSummary);
+  for (const row of publicRows.data ?? []) {
+    people.set(row.id, { id: row.id, full_name: row.display_name, avatar_url: row.avatar_url } as PersonSummary);
+  }
   for (const row of profileRows.data ?? []) people.set(row.id, row as PersonSummary);
   return people;
 }

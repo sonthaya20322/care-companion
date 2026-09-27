@@ -16,6 +16,24 @@ export function areaFilterValue(filter: AreaFilter): string {
   return "";
 }
 
+/** Human label of the filter, e.g. "ทั้งกรุงเทพมหานคร" or "คลองเตย, กรุงเทพมหานคร"; null for "everywhere". */
+export function areaFilterLabel(
+  filter: AreaFilter,
+  provinces: { id: number; name_th: string; districts: { id: number; name_th: string }[] }[],
+): string | null {
+  if (filter.kind === "province") {
+    const province = provinces.find((p) => p.id === filter.id);
+    return province ? `ทั้ง${province.name_th}` : null;
+  }
+  if (filter.kind === "district") {
+    for (const province of provinces) {
+      const district = province.districts.find((d) => d.id === filter.id);
+      if (district) return `${district.name_th}, ${province.name_th}`;
+    }
+  }
+  return null;
+}
+
 /** District ids the filter covers, or undefined for "everywhere". */
 export function districtIdsFor(
   filter: AreaFilter,

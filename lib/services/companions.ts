@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export type PublicCompanion = {
   id: string;
-  full_name: string;
+  /** "ชื่อ + อักษรแรกของนามสกุล" computed in the DB; the full name is never public. */
+  display_name: string;
   avatar_url: string | null;
   bio: string;
   experience_years: number;
@@ -32,7 +33,7 @@ export type PublicReview = {
 };
 
 const companionColumns =
-  "id, full_name, avatar_url, bio, experience_years, skills, languages, hourly_rate, has_vehicle, rating_avg, rating_count, verified_at, district_ids";
+  "id, display_name, avatar_url, bio, experience_years, skills, languages, hourly_rate, has_vehicle, rating_avg, rating_count, verified_at, district_ids";
 
 function toCompanion(row: Record<string, unknown>): PublicCompanion {
   return {
