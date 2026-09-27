@@ -88,7 +88,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-3 sm:justify-end">
+              <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
                 <StatusStamp
                   tone={u.status === "active" ? "matcha" : "beni"}
                   label={u.status === "active" ? "ใช้งานอยู่" : "ถูกระงับ"}
