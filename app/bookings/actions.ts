@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { actionSuccessMessages, bookingActionSchema } from "@/lib/domain/booking-action";
 import { toUserMessage } from "@/lib/domain/errors";
 import { fieldMessages, notAllowed, type ActionState } from "@/lib/services/action-helpers";
@@ -65,6 +66,9 @@ export async function bookingAction(_prev: ActionState, formData: FormData): Pro
     return { message: toUserMessage(error) };
   }
 
+  if (input.action === "claim" || input.action === "accept") {
+    redirect(`/companion/jobs/${input.bookingId}?accepted=1`);
+  }
   refresh();
   return { ok: true, message: actionSuccessMessages[input.action] };
 }
