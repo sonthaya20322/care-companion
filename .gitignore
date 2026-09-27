@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# local-only: project docs, AI rules, database schema
+/docs/
+/.cursor/
+/supabase/
+*.sql
 
 # vercel
 .vercel
