@@ -10,8 +10,8 @@ type AreaShellProps = {
 
 export function AreaShell({ title, subtitle, nav, children }: AreaShellProps) {
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 md:grid-cols-[14rem_1fr] md:gap-10 md:py-12">
-      <aside className="md:sticky md:top-28 md:self-start">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-5 py-8 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-10 md:py-12">
+      <aside className="min-w-0 md:sticky md:top-28 md:self-start">
         <p className="text-sm text-sumi-soft">{subtitle}</p>
         <p className="font-display text-xl text-sumi">{title}</p>
         <div className="mt-4">

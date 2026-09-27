@@ -26,7 +26,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-washi-line bg-washi/90 backdrop-blur-sm">
-      <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-5">
+      <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-5">
         <AppName />
 
         <nav aria-label="เมนูหลัก" className="hidden md:block">
@@ -47,7 +47,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-1 sm:gap-2">
           {profile && home ? (
             <>
-              <ButtonLink href={home} variant="primary" className="max-sm:px-4">
+              <ButtonLink href={home} variant="primary" className="max-sm:px-3.5">
                 {profile.role ? "บัญชีของฉัน" : "ตั้งค่าบัญชี"}
               </ButtonLink>
               <form action={signOut} className="hidden md:block">
@@ -57,7 +57,7 @@ export async function SiteHeader() {
               </form>
             </>
           ) : (
-            <ButtonLink href="/login" variant="primary">
+            <ButtonLink href="/login" variant="primary" className="max-sm:px-3.5">
               เข้าสู่ระบบ
             </ButtonLink>
           )}

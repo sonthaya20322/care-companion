@@ -10,7 +10,7 @@ export function AppName({ className }: AppNameProps) {
   return (
     <Link
       href="/"
-      className={cn("group inline-flex items-center gap-2.5 rounded-control", className)}
+      className={cn("group inline-flex items-center gap-2 rounded-control sm:gap-2.5", className)}
       aria-label="Care Companion หน้าแรก"
     >
       <svg
@@ -30,7 +30,7 @@ export function AppName({ className }: AppNameProps) {
         />
         <path d="M17.5 23.5h6" className="stroke-sumi" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span className="whitespace-nowrap font-brand text-lg font-bold tracking-tight text-sumi sm:text-xl">
+      <span className="whitespace-nowrap font-brand text-base font-bold tracking-tight text-sumi min-[400px]:text-lg sm:text-xl">
         Care<span className="text-sakura-600"> Companion</span>
       </span>
     </Link>
