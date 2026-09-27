@@ -1,26 +1,190 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Sakura × Sora design tokens.
+ * Pastel shades (50–400) are for surfaces only. Text and filled buttons must use
+ * 600+ or sumi, all verified at >= 4.5:1 on washi/white.
+ */
+@theme {
+  --color-sakura-50: #fdf3f6;
+  --color-sakura-100: #fbe5ed;
+  --color-sakura-200: #f5cada;
+  --color-sakura-300: #eeb0c6;
+  --color-sakura-400: #e896b3;
+  --color-sakura-600: #b0476f;
+  --color-sakura-700: #8f3659;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-sora-50: #f2f8fc;
+  --color-sora-100: #e1eff9;
+  --color-sora-200: #c0ddf2;
+  --color-sora-300: #9fc9ea;
+  --color-sora-400: #7eb5e1;
+  --color-sora-600: #2f6fa6;
+  --color-sora-700: #245784;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-washi: #fbf8f4;
+  --color-washi-surface: #fffdfa;
+  --color-washi-line: #ede5de;
+
+  --color-sumi: #2a2838;
+  --color-sumi-soft: #5a566b;
+
+  --color-matcha: #46704b;
+  --color-matcha-bg: #e7f0e4;
+  --color-fuji: #62519a;
+  --color-fuji-bg: #eeeaf6;
+  --color-yamabuki: #855a10;
+  --color-yamabuki-bg: #fbf0d9;
+  --color-beni: #b53f3a;
+  --color-beni-bg: #fbe9e7;
+
+  --font-sans: var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-mitr), var(--font-plex-thai), sans-serif;
+  --font-brand: var(--font-zen-maru), var(--font-mitr), sans-serif;
+
+  --radius-control: 14px;
+  --radius-card: 20px;
+
+  --shadow-soft: 0 1px 2px rgb(143 54 89 / 0.06), 0 4px 16px rgb(143 54 89 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(143 54 89 / 0.08), 0 12px 32px rgb(143 54 89 / 0.1);
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+
+  --animate-rise: rise 320ms var(--ease-out-quart) both;
+  --animate-stamp: stamp 420ms var(--ease-out-quart) both;
+  --animate-petal: petal 1200ms var(--ease-out-quart) forwards;
+  --animate-shimmer: shimmer 1600ms linear infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes stamp {
+    0% {
+      opacity: 0;
+      transform: scale(1.3) rotate(-8deg);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(0.96) rotate(-8deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(-8deg);
+    }
+  }
+
+  @keyframes petal {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) rotate(0deg);
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--petal-x, 24px), -72px) rotate(140deg);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Children reveal one after another; pair with animate-rise on each child. */
+@utility stagger {
+  & > * {
+    animation-delay: calc(var(--stagger-index, 0) * 70ms);
+  }
+  & > *:nth-child(2) {
+    --stagger-index: 1;
+  }
+  & > *:nth-child(3) {
+    --stagger-index: 2;
+  }
+  & > *:nth-child(4) {
+    --stagger-index: 3;
+  }
+  & > *:nth-child(5) {
+    --stagger-index: 4;
+  }
+  & > *:nth-child(n + 6) {
+    --stagger-index: 5;
+  }
+}
+
+/* Seigaiha (青海波) wave pattern for quiet section dividers and hero backdrops. */
+@utility bg-seigaiha {
+  background-color: var(--color-washi);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24' viewBox='0 0 48 24'%3E%3Cg stroke='%23c0ddf2' stroke-width='1'%3E%3Cg fill='%23fbf8f4'%3E%3Ccircle cx='0' cy='12' r='24'/%3E%3Ccircle cx='48' cy='12' r='24'/%3E%3C/g%3E%3Cg fill='none'%3E%3Ccircle cx='0' cy='12' r='17'/%3E%3Ccircle cx='0' cy='12' r='10'/%3E%3Ccircle cx='48' cy='12' r='17'/%3E%3Ccircle cx='48' cy='12' r='10'/%3E%3C/g%3E%3Ccircle cx='24' cy='24' r='24' fill='%23fbf8f4'/%3E%3Cg fill='none'%3E%3Ccircle cx='24' cy='24' r='17'/%3E%3Ccircle cx='24' cy='24' r='10'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 24px;
+}
+
+@utility skeleton {
+  border-radius: var(--radius-control);
+  background: linear-gradient(
+    90deg,
+    var(--color-sakura-50) 25%,
+    var(--color-sakura-100) 50%,
+    var(--color-sakura-50) 75%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@layer base {
+  html {
+    font-size: 112.5%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-washi);
+    color: var(--color-sumi);
+    font-family: var(--font-sans);
+    line-height: 1.7;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: var(--color-sakura-200);
+    color: var(--color-sumi);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-sora-600);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
