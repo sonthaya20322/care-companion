@@ -4,7 +4,7 @@ import { BookingCard } from "@/components/bookings/BookingCard";
 import { BookingSection } from "@/components/bookings/BookingSection";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { splitBookings } from "@/lib/domain/booking-list";
+import { splitCompanionBookings } from "@/lib/domain/booking-list";
 import { getPeople, listBookings, type BookingView } from "@/lib/services/bookings";
 import { requireRole } from "@/lib/services/guard";
 
@@ -15,7 +15,7 @@ export default async function CompanionJobsPage() {
   const bookings = await listBookings({ companionId: profile.id });
   const people = await getPeople(bookings.map((b) => b.customer_id));
   const now = new Date();
-  const { upcoming, past } = splitBookings(bookings, now);
+  const { pendingRequests, jobs, past } = splitCompanionBookings(bookings, now);
 
   const card = (b: BookingView) => (
     <BookingCard
@@ -39,8 +39,16 @@ export default async function CompanionJobsPage() {
         />
       ) : (
         <div className="flex flex-col gap-10">
-          <BookingSection title="กำลังจะมาถึง" empty="ไม่มีงานที่รออยู่">
-            {upcoming.map(card)}
+          {pendingRequests.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-control bg-sora-50 px-4 py-3">
+              <p className="text-sumi">มีคำขอที่ส่งถึงคุณและรอคุณตอบ {pendingRequests.length} รายการ</p>
+              <ButtonLink href="/companion/requests" variant="secondary">
+                ดูคำขอรับงาน
+              </ButtonLink>
+            </div>
+          )}
+          <BookingSection title="งานที่รับไว้" empty="ยังไม่มีงานที่รับไว้">
+            {jobs.map(card)}
           </BookingSection>
           <BookingSection title="ประวัติ" empty="ยังไม่มีประวัติ">
             {past.map(card)}

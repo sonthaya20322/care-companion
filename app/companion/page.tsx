@@ -6,7 +6,7 @@ import { RatingText } from "@/components/companions/RatingText";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StatusStamp } from "@/components/ui/StatusStamp";
-import { splitBookings } from "@/lib/domain/booking-list";
+import { splitCompanionBookings } from "@/lib/domain/booking-list";
 import { verificationMeta } from "@/lib/domain/companion";
 import { getPeople, listBookings, listOpenRequests } from "@/lib/services/bookings";
 import { getMyCompanionProfile } from "@/lib/services/companion-self";
@@ -26,9 +26,8 @@ export default async function CompanionHomePage() {
     listBookings({ companionId: profile.id }),
     approved ? listOpenRequests() : Promise.resolve([]),
   ]);
-  const { upcoming, past } = splitBookings(mine, now);
-  const waiting = upcoming.filter((b) => b.status === "requested").length + open.length;
-  const jobs = upcoming.filter((b) => b.status !== "requested");
+  const { pendingRequests, jobs, past } = splitCompanionBookings(mine, now);
+  const waiting = pendingRequests.length + open.length;
   const next = jobs.slice(0, 3);
   const people = await getPeople(next.map((b) => b.customer_id));
   const firstName = profile.full_name.split(" ")[0];

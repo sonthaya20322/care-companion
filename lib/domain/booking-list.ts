@@ -1,4 +1,11 @@
-import { bookingRules, displayStatus, rangesOverlap, type BookingStatus, type DisplayStatus } from "./booking";
+import {
+  bookingRules,
+  bookingStatusMeta,
+  displayStatus,
+  rangesOverlap,
+  type BookingStatus,
+  type DisplayStatus,
+} from "./booking";
 
 export type BookingQuery = {
   status: BookingStatus;
@@ -60,6 +67,40 @@ export function splitBookings<T extends Listed>(bookings: T[], now: Date) {
   }
   upcoming.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   return { upcoming, past };
+}
+
+/**
+ * Companion view of their own bookings: direct requests still waiting for their answer are kept apart
+ * from jobs they have taken, so the overview count and the jobs list are the same group.
+ */
+export function splitCompanionBookings<T extends Listed>(bookings: T[], now: Date) {
+  const { upcoming, past } = splitBookings(bookings, now);
+  return {
+    pendingRequests: upcoming.filter((b) => b.status === "requested"),
+    jobs: upcoming.filter((b) => b.status !== "requested"),
+    past,
+  };
+}
+
+/** One wording for the not-finished group on every page, so counts and lists read the same. */
+export const activeBookingsLabel = "นัดหมายที่ดำเนินอยู่";
+
+/**
+ * Overview numbers derived from the same split as the bookings list, with the active group broken
+ * down by the status badges people see (e.g. "กำลังให้บริการ 1 · รอผู้ช่วยรับงาน 1").
+ */
+export function summarizeBookings<T extends Listed>(bookings: T[], now: Date) {
+  const { upcoming, past } = splitBookings(bookings, now);
+  const counts = countByStatus(upcoming, now);
+  const breakdown = actionable
+    .filter((status) => counts[status])
+    .map((status) => ({ status, label: bookingStatusMeta[status].label, count: counts[status] ?? 0 }));
+  return {
+    active: upcoming.length,
+    breakdown,
+    completed: past.filter((b) => b.status === "completed").length,
+    total: bookings.length,
+  };
 }
 
 export function countByStatus<T extends Listed>(bookings: T[], now: Date) {

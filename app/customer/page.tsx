@@ -4,7 +4,7 @@ import { BookingCard } from "@/components/bookings/BookingCard";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { splitBookings } from "@/lib/domain/booking-list";
+import { activeBookingsLabel, splitBookings, summarizeBookings } from "@/lib/domain/booking-list";
 import { getPeople, listBookings } from "@/lib/services/bookings";
 import { requireRole } from "@/lib/services/guard";
 
@@ -14,10 +14,10 @@ export default async function CustomerHomePage() {
   const profile = await requireRole("customer", "/customer");
   const bookings = await listBookings({ customerId: profile.id });
   const now = new Date();
-  const { upcoming, past } = splitBookings(bookings, now);
+  const { upcoming } = splitBookings(bookings, now);
+  const summary = summarizeBookings(bookings, now);
   const next = upcoming.slice(0, 3);
   const people = await getPeople(next.map((b) => b.companion_id ?? ""));
-  const completedCount = past.filter((b) => b.status === "completed").length;
   const firstName = profile.full_name.split(" ")[0];
 
   return (
@@ -37,22 +37,32 @@ export default async function CustomerHomePage() {
       ) : (
         <div className="flex flex-col gap-8">
           <div className="stagger grid gap-4 sm:grid-cols-3">
-            <Stat label="นัดหมายที่รออยู่" value={upcoming.length} tone="bg-sora-50 text-sora-700" />
-            <Stat label="ใช้บริการแล้ว" value={completedCount} tone="bg-matcha-bg text-matcha" />
-            <Stat label="นัดหมายทั้งหมด" value={bookings.length} tone="bg-sakura-50 text-sakura-700" />
+            <Stat
+              label={activeBookingsLabel}
+              value={summary.active}
+              tone="bg-sora-50 text-sora-700"
+              note={summary.breakdown.map((item) => `${item.label} ${item.count}`).join(" · ")}
+            />
+            <Stat label="ใช้บริการเสร็จสิ้น" value={summary.completed} tone="bg-matcha-bg text-matcha" />
+            <Stat label="นัดหมายทั้งหมด" value={summary.total} tone="bg-sakura-50 text-sakura-700" />
           </div>
 
           <section aria-labelledby="next-heading">
             <div className="mb-4 flex items-end justify-between gap-4">
               <h2 id="next-heading" className="font-display text-xl text-sumi">
-                นัดหมายถัดไป
+                {activeBookingsLabel}
+                {summary.active > next.length && (
+                  <span className="ml-2 text-base text-sumi-soft">
+                    (แสดง {next.length} จาก {summary.active})
+                  </span>
+                )}
               </h2>
               <ButtonLink href="/customer/bookings" variant="ghost">
                 ดูทั้งหมด
               </ButtonLink>
             </div>
             {next.length === 0 ? (
-              <p className="text-sumi-soft">ไม่มีนัดหมายที่รออยู่</p>
+              <p className="text-sumi-soft">ไม่มี{activeBookingsLabel}</p>
             ) : (
               <ul className="stagger flex flex-col gap-3">
                 {next.map((b) => (
@@ -74,11 +84,12 @@ export default async function CustomerHomePage() {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone: string }) {
+function Stat({ label, value, tone, note }: { label: string; value: number; tone: string; note?: string }) {
   return (
     <Card className="flex flex-col gap-1">
       <span className={`self-start rounded-full px-3 py-1 text-sm font-medium ${tone}`}>{label}</span>
       <span className="font-display text-4xl text-sumi">{value}</span>
+      {note && <span className="text-sm text-sumi-soft">{note}</span>}
     </Card>
   );
 }

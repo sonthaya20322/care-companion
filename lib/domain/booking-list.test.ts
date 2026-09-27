@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countByStatus, findConflict, queryForDisplayStatus, splitBookings } from "./booking-list";
+import { countByStatus, findConflict, queryForDisplayStatus, splitBookings, splitCompanionBookings, summarizeBookings } from "./booking-list";
 
 const now = new Date("2026-10-01T03:00:00Z");
 const rows = [
@@ -12,6 +12,37 @@ const rows = [
   { id: "open", status: "requested" as const, starts_at: "2026-10-03T02:00:00+00:00", companion_id: null },
   { id: "noshow", status: "accepted" as const, starts_at: "2026-10-01T01:30:00+00:00" },
 ];
+
+describe("summarizeBookings", () => {
+  it("counts the same active bookings the list shows, broken down by the badges people see (bug: overview 3 vs 1 waiting)", () => {
+    const summary = summarizeBookings(rows, now);
+    expect(summary.active).toBe(splitBookings(rows, now).upcoming.length);
+    expect(summary.breakdown.reduce((sum, item) => sum + item.count, 0)).toBe(summary.active);
+    expect(summary.breakdown).toEqual([
+      { status: "requested", label: "รอตอบรับ", count: 1 },
+      { status: "open", label: "รอผู้ช่วยรับงาน", count: 1 },
+      { status: "accepted", label: "ตอบรับแล้ว", count: 1 },
+      { status: "overdue", label: "เลยเวลานัด", count: 1 },
+      { status: "in_progress", label: "กำลังให้บริการ", count: 1 },
+    ]);
+  });
+
+  it("totals match: active + history = all bookings; completed counts only finished jobs", () => {
+    const summary = summarizeBookings(rows, now);
+    expect(summary.total).toBe(rows.length);
+    expect(summary.completed).toBe(1);
+    expect(summarizeBookings([], now)).toEqual({ active: 0, breakdown: [], completed: 0, total: 0 });
+  });
+});
+
+describe("splitCompanionBookings", () => {
+  it("keeps unanswered requests out of the taken jobs so overview and jobs list agree", () => {
+    const { pendingRequests, jobs, past } = splitCompanionBookings(rows, now);
+    expect(pendingRequests.map((b) => b.id)).toEqual(["soon", "open"]);
+    expect(jobs.map((b) => b.id)).toEqual(["noshow", "running", "late"]);
+    expect(pendingRequests.length + jobs.length + past.length).toBe(rows.length);
+  });
+});
 
 describe("splitBookings", () => {
   it("keeps actionable bookings upcoming, soonest first (overdue jobs still need a decision)", () => {

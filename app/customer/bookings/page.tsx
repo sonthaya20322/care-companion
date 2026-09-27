@@ -4,7 +4,7 @@ import { BookingCard } from "@/components/bookings/BookingCard";
 import { BookingSection } from "@/components/bookings/BookingSection";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { splitBookings } from "@/lib/domain/booking-list";
+import { activeBookingsLabel, splitBookings } from "@/lib/domain/booking-list";
 import { getPeople, listBookings, type BookingView } from "@/lib/services/bookings";
 import { requireRole } from "@/lib/services/guard";
 
@@ -44,7 +44,7 @@ export default async function CustomerBookingsPage() {
         />
       ) : (
         <div className="flex flex-col gap-10">
-          <BookingSection title="กำลังจะมาถึง" empty="ไม่มีนัดหมายที่รออยู่">
+          <BookingSection title={activeBookingsLabel} empty={`ไม่มี${activeBookingsLabel}`}>
             {upcoming.map(card)}
           </BookingSection>
           <BookingSection title="ประวัติ" empty="ยังไม่มีประวัติ">
