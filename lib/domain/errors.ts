@@ -52,6 +52,10 @@ export const errorMessages: Record<string, string> = {
   PICKUP_REQUIRED: "กรุณากรอกที่อยู่จุดรับ",
   DESTINATION_REQUIRED: "กรุณากรอกชื่อสถานที่ปลายทาง",
   TEXT_TOO_LONG: "ข้อความยาวเกินกำหนด",
+  ERRAND_NAME_REQUIRED: "กรุณากรอกชื่อประเภทธุระอย่างน้อย 2 ตัวอักษร",
+  INVALID_SLUG: "รหัสใช้ได้เฉพาะ a-z, 0-9 และขีดกลาง (ไม่เกิน 40 ตัว)",
+  INVALID_SORT_ORDER: "ลำดับต้องเป็นตัวเลข 0-999",
+  SLUG_TAKEN: "รหัสนี้ถูกใช้แล้ว กรุณาใช้รหัสอื่น",
 };
 
 export const fallbackErrorMessage = "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";

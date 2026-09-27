@@ -96,11 +96,14 @@ export async function getPeople(ids: string[]): Promise<Map<string, PersonSummar
   return people;
 }
 
-export async function listBookings(filter: { customerId?: string; companionId?: string; limit?: number } = {}) {
+export async function listBookings(
+  filter: { customerId?: string; companionId?: string; status?: BookingStatus; limit?: number } = {},
+) {
   const supabase = await createClient();
   let query = supabase.from("bookings").select(columns).order("starts_at", { ascending: false }).limit(filter.limit ?? 100);
   if (filter.customerId) query = query.eq("customer_id", filter.customerId);
   if (filter.companionId) query = query.eq("companion_id", filter.companionId);
+  if (filter.status) query = query.eq("status", filter.status);
   const { data, error } = await query;
   if (error) fail("listBookings", error);
   return decorate(data ?? []);
