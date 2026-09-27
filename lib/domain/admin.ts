@@ -13,6 +13,16 @@ export const userStatusSchema = z.object({
   status: z.enum(["active", "suspended"]),
 });
 
+export const resetRoleSchema = z.object({ userId: z.uuid() });
+
+/**
+ * An account type can be reset only while nothing depends on it: not an admin, not yourself, and
+ * no bookings on either side. The database re-checks all of this.
+ */
+export function canResetRole(user: { id: string; role: string | null }, adminId: string, bookings: number): boolean {
+  return user.role !== null && user.role !== "admin" && user.id !== adminId && bookings === 0;
+}
+
 export const errandTypeSchema = z.object({
   id: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().positive().optional()),
   name_th: z.string().trim().min(2, "ERRAND_NAME_REQUIRED").max(60, "TEXT_TOO_LONG"),

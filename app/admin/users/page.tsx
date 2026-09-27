@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Avatar } from "@/components/Avatar";
 import { PageHeading } from "@/components/area/AreaShell";
+import { ResetRoleButton } from "@/components/admin/ResetRoleButton";
 import { UserStatusButton } from "@/components/admin/UserStatusButton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input, Select } from "@/components/ui/Field";
 import { StatusStamp } from "@/components/ui/StatusStamp";
-import { sanitizeSearch } from "@/lib/domain/admin";
+import { canResetRole, sanitizeSearch } from "@/lib/domain/admin";
 import type { UserRole } from "@/lib/domain/roles";
 import { getUserBookingSummaries, listUsers } from "@/lib/services/admin";
 import { requireRole } from "@/lib/services/guard";
@@ -92,6 +93,9 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
                   tone={u.status === "active" ? "matcha" : "beni"}
                   label={u.status === "active" ? "ใช้งานอยู่" : "ถูกระงับ"}
                 />
+                {canResetRole(u, me.id, summaries.get(u.id)?.bookings ?? 0) && (
+                  <ResetRoleButton userId={u.id} name={u.full_name || u.email} roleLabel={roleLabels[u.role ?? "none"]} />
+                )}
                 {u.id !== me.id && u.role !== "admin" && (
                   <UserStatusButton userId={u.id} name={u.full_name || u.email} status={u.status} />
                 )}

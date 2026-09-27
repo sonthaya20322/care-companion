@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activeBookingCount,
+  canResetRole,
   errandTypeSchema,
   parseDashboardStats,
   reviewDecisionSchema,
@@ -90,6 +91,20 @@ describe("sumCounts", () => {
   it("sums all or selected keys", () => {
     expect(sumCounts({ a: 1, b: 2, c: 3 })).toBe(6);
     expect(sumCounts({ a: 1, b: 2, c: 3 }, ["a", "c"])).toBe(4);
+  });
+});
+
+describe("canResetRole", () => {
+  it("allows resetting a customer or companion with no bookings (B-6)", () => {
+    expect(canResetRole({ id: "u1", role: "customer" }, "admin", 0)).toBe(true);
+    expect(canResetRole({ id: "u1", role: "companion" }, "admin", 0)).toBe(true);
+  });
+
+  it("refuses when bookings exist, for admins, for yourself, or when nothing is chosen yet", () => {
+    expect(canResetRole({ id: "u1", role: "customer" }, "admin", 1)).toBe(false);
+    expect(canResetRole({ id: "u1", role: "admin" }, "admin", 0)).toBe(false);
+    expect(canResetRole({ id: "admin", role: "customer" }, "admin", 0)).toBe(false);
+    expect(canResetRole({ id: "u1", role: null }, "admin", 0)).toBe(false);
   });
 });
 

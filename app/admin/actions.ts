@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { errandTypeSchema, reviewDecisionSchema, userStatusSchema } from "@/lib/domain/admin";
+import { errandTypeSchema, resetRoleSchema, reviewDecisionSchema, userStatusSchema } from "@/lib/domain/admin";
 import { errorMessages, toUserMessage } from "@/lib/domain/errors";
 import { actionProfile, fieldMessages, notAllowed, type ActionState } from "@/lib/services/action-helpers";
 import { createClient } from "@/lib/supabase/server";
@@ -45,6 +45,21 @@ export async function setUserStatus(_prev: ActionState, formData: FormData): Pro
     ok: true,
     message: parsed.data.status === "suspended" ? "ระงับบัญชีและยกเลิกนัดที่ยังไม่เริ่มแล้ว" : "เปิดใช้งานบัญชีแล้ว",
   };
+}
+
+export async function resetUserRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (!(await actionProfile("admin"))) return notAllowed;
+  const parsed = resetRoleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { message: errorMessages.USER_NOT_FOUND };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_reset_role", { p_user_id: parsed.data.userId });
+  if (error) {
+    console.error("admin_reset_role failed", { code: error.code });
+    return { message: toUserMessage(error) };
+  }
+  refresh();
+  return { ok: true, message: "รีเซ็ตประเภทบัญชีแล้ว ผู้ใช้จะได้เลือกใหม่เมื่อเข้าสู่ระบบครั้งถัดไป" };
 }
 
 export async function saveErrandType(_prev: ActionState, formData: FormData): Promise<ActionState> {
