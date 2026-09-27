@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local-only database tooling (not in git)
+    "supabase/**",
   ]),
 ]);
 
