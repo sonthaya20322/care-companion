@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bookingRules, validateSchedule } from "./booking";
+import { bookingRules, rangesOverlap, validateSchedule } from "./booking";
 import { phoneSchema } from "./profile";
 
 /** Thailand has no daylight saving, so local wall time is always UTC+7. */
@@ -47,6 +47,33 @@ export function checkStart(startsAt: Date, now: Date): StartProblem | null {
   if (startsAt.getTime() <= now.getTime()) return "START_IN_PAST";
   const problem = validateSchedule(startsAt, bookingRules.minDurationHours, now);
   return problem === "START_TOO_SOON" || problem === "START_TOO_FAR" ? problem : null;
+}
+
+export type TimeRange = { startsAt: Date; endsAt: Date };
+
+/** The customer's other bookings that overlap the chosen time; a warning only, the customer may still book. */
+export function overlappingRanges(chosen: TimeRange, others: TimeRange[]): TimeRange[] {
+  return others.filter((o) => rangesOverlap(chosen.startsAt, chosen.endsAt, o.startsAt, o.endsAt));
+}
+
+export type WeeklySlot = { day_of_week: number; start_time: string; end_time: string };
+
+const minutesOf = (time: string) => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * Whether the booking fits inside one of the companion's weekly slots, in Bangkok time.
+ * Returns null when the companion has not stated any hours, so there is nothing to warn about.
+ */
+export function fitsAvailability(chosen: TimeRange, slots: WeeklySlot[]): boolean | null {
+  if (slots.length === 0) return null;
+  const local = new Date(chosen.startsAt.getTime() + 7 * 60 * 60 * 1000);
+  const day = local.getUTCDay();
+  const start = local.getUTCHours() * 60 + local.getUTCMinutes();
+  const end = start + (chosen.endsAt.getTime() - chosen.startsAt.getTime()) / 60000;
+  return slots.some((s) => s.day_of_week === day && minutesOf(s.start_time) <= start && end <= minutesOf(s.end_time));
 }
 
 export function durationOptions(): number[] {

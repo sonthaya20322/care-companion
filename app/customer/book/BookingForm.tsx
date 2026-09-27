@@ -12,6 +12,9 @@ import {
   bangkokTimeString,
   checkStart,
   durationOptions,
+  fitsAvailability,
+  overlappingRanges,
+  type WeeklySlot,
 } from "@/lib/domain/booking-form";
 import { errorMessages } from "@/lib/domain/errors";
 import { useActionForm } from "@/lib/hooks/use-action-form";
@@ -30,6 +33,8 @@ type BookingFormProps = {
   maxDate: string;
   earliestStartIso: string;
   defaultStart: { date: string; time: string };
+  activeBookings: { startsAt: string; endsAt: string }[];
+  availability: WeeklySlot[];
 };
 
 export function BookingForm({
@@ -42,6 +47,8 @@ export function BookingForm({
   maxDate,
   earliestStartIso,
   defaultStart,
+  activeBookings,
+  availability,
 }: BookingFormProps) {
   const { state, formAction, pending, formRef, handleSubmit } = useActionForm<BookingFormState>(createBooking, {});
   const values = state.values ?? {};
@@ -73,6 +80,14 @@ export function BookingForm({
 
   const endsAt = startsAt ? computeEndsAt(startsAt, duration) : null;
   const endsNextDay = startsAt && endsAt ? bangkokDateString(endsAt) !== bangkokDateString(startsAt) : false;
+  const chosen = startsAt && endsAt && !startProblem ? { startsAt, endsAt } : null;
+  const clashes = chosen
+    ? overlappingRanges(
+        chosen,
+        activeBookings.map((b) => ({ startsAt: new Date(b.startsAt), endsAt: new Date(b.endsAt) })),
+      ).length
+    : 0;
+  const outsideHours = companion && chosen ? fitsAvailability(chosen, availability) === false : false;
 
   const input = (name: string, hint?: string) => ({
     id: name,
@@ -194,6 +209,16 @@ export function BookingForm({
             </p>
           ) : (
             startProblem && <p className="font-medium text-beni">{errorMessages[startProblem]}</p>
+          )}
+          {clashes > 0 && (
+            <p className="font-medium text-yamabuki">
+              ช่วงเวลานี้ซ้อนกับนัดอื่นของคุณ {clashes} รายการ ตรวจสอบก่อนส่งคำขอ
+            </p>
+          )}
+          {outsideHours && (
+            <p className="font-medium text-yamabuki">
+              เวลานี้อยู่นอกช่วงที่คุณ{companion?.name}สะดวก ผู้ช่วยอาจปฏิเสธคำขอ ลองเลือกเวลาตามตารางในหน้าโปรไฟล์ผู้ช่วย
+            </p>
           )}
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sumi-soft">
             <span>

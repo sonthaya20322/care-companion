@@ -67,6 +67,8 @@ export type BookingSnapshot = {
   startsAt: Date;
   endsAt: Date;
   hasReview?: boolean;
+  cancelledBy?: string | null;
+  reopenedAs?: string | null;
 };
 
 /** Requests may be accepted or claimed only before this moment. */
@@ -135,7 +137,8 @@ export type BookingAction =
   | "cancel"
   | "review"
   | "no_show"
-  | "confirm_complete";
+  | "confirm_complete"
+  | "reopen";
 
 export type Actor = { id: string; role: UserRole };
 
@@ -164,6 +167,12 @@ export function availableActions(booking: BookingSnapshot, actor: Actor, now: Da
       actions.push("confirm_complete");
     }
     if (booking.status === "completed" && !booking.hasReview) actions.push("review");
+    const endedByOthers =
+      booking.status === "rejected" ||
+      (booking.status === "cancelled" && booking.cancelledBy != null && booking.cancelledBy !== actor.id);
+    if (endedByOthers && !booking.reopenedAs && t < requestDeadline(booking.startsAt).getTime()) {
+      actions.push("reopen");
+    }
     return actions;
   }
 

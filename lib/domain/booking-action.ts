@@ -8,6 +8,7 @@ export const bookingActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("complete"), bookingId: z.uuid() }),
   z.object({ action: z.literal("no_show"), bookingId: z.uuid() }),
   z.object({ action: z.literal("confirm_complete"), bookingId: z.uuid() }),
+  z.object({ action: z.literal("reopen"), bookingId: z.uuid() }),
   z.object({
     action: z.literal("reject"),
     bookingId: z.uuid(),
@@ -38,4 +39,5 @@ export const actionSuccessMessages: Record<BookingActionInput["action"], string>
   review: "ขอบคุณสำหรับรีวิว",
   no_show: "ปิดนัดแล้ว ขออภัยในความไม่สะดวก ผู้ดูแลระบบจะตรวจสอบรายการนี้",
   confirm_complete: "ยืนยันจบงานแล้ว ให้คะแนนผู้ช่วยได้เลย",
+  reopen: "เปิดเป็นคำขอให้ผู้ช่วยคนอื่นแล้ว",
 };

@@ -22,6 +22,7 @@ export type Booking = {
   status: BookingStatus;
   cancel_reason: string | null;
   cancelled_by: string | null;
+  reopened_as: string | null;
   created_at: string;
 };
 
@@ -51,7 +52,7 @@ export type BookingDetail = BookingView & {
 };
 
 const columns =
-  "id, customer_id, companion_id, errand_type_id, starts_at, ends_at, duration_hours, pickup_district_id, destination_name, destination_address, destination_district_id, details, special_needs, hourly_rate, estimated_price, status, cancel_reason, cancelled_by, created_at";
+  "id, customer_id, companion_id, errand_type_id, starts_at, ends_at, duration_hours, pickup_district_id, destination_name, destination_address, destination_district_id, details, special_needs, hourly_rate, estimated_price, status, cancel_reason, cancelled_by, reopened_as, created_at";
 
 function fail(what: string, error: { code?: string }): never {
   console.error(`${what} failed`, { code: error.code });

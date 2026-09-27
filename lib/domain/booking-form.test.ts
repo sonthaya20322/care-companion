@@ -7,6 +7,8 @@ import {
   defaultStart,
   durationOptions,
   earliestStart,
+  fitsAvailability,
+  overlappingRanges,
   parseBookingForm,
 } from "./booking-form";
 
@@ -120,5 +122,38 @@ describe("start time helpers", () => {
     expect(checkStart(new Date("2026-10-01T02:00:00Z"), now)).toBe("START_TOO_SOON");
     expect(checkStart(new Date("2026-12-15T02:00:00Z"), now)).toBe("START_TOO_FAR");
     expect(checkStart(new Date("2026-10-01T03:00:00Z"), now)).toBeNull();
+  });
+});
+
+describe("booking warnings", () => {
+  const at = (date: string, time: string) => bangkokLocalToDate(date, time)!;
+  const range = (date: string, from: string, to: string) => ({ startsAt: at(date, from), endsAt: at(date, to) });
+
+  it("finds the customer's own bookings that overlap the chosen time (A5)", () => {
+    const chosen = range("2026-10-02", "09:00", "12:00");
+    const others = [
+      range("2026-10-02", "11:00", "13:00"),
+      range("2026-10-02", "12:00", "14:00"),
+      range("2026-10-03", "09:00", "12:00"),
+    ];
+    expect(overlappingRanges(chosen, others)).toEqual([others[0]]);
+  });
+
+  // 2026-10-02 is a Friday (day 5)
+  const slots = [{ day_of_week: 5, start_time: "08:00:00", end_time: "17:00:00" }];
+
+  it("fits a booking inside the companion's hours in Bangkok time", () => {
+    expect(fitsAvailability(range("2026-10-02", "09:00", "12:00"), slots)).toBe(true);
+    expect(fitsAvailability(range("2026-10-02", "14:00", "17:00"), slots)).toBe(true);
+  });
+
+  it("flags a booking that runs past the slot or falls on another day", () => {
+    expect(fitsAvailability(range("2026-10-02", "15:00", "18:00"), slots)).toBe(false);
+    expect(fitsAvailability(range("2026-10-02", "07:30", "09:00"), slots)).toBe(false);
+    expect(fitsAvailability(range("2026-10-03", "09:00", "12:00"), slots)).toBe(false);
+  });
+
+  it("has nothing to say when the companion has not set any hours", () => {
+    expect(fitsAvailability(range("2026-10-02", "09:00", "12:00"), [])).toBeNull();
   });
 });

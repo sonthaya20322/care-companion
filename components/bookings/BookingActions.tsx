@@ -77,6 +77,14 @@ export function BookingActions({ bookingId, actions, viewerRole }: Props) {
             </SubmitButton>
           </form>
         )}
+        {actions.includes("reopen") && (
+          <form action={formAction}>
+            {hidden("reopen")}
+            <SubmitButton size="lg" pendingLabel="กำลังเปิดคำขอ...">
+              เปิดเป็นคำขอให้ผู้ช่วยคนอื่น
+            </SubmitButton>
+          </form>
+        )}
         {actions.includes("no_show") && (
           <form
             action={formAction}

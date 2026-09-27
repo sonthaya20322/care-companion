@@ -6,7 +6,9 @@ import { formatBaht } from "@/lib/domain/booking";
 import { bangkokDateString, defaultStart, earliestStart } from "@/lib/domain/booking-form";
 import { bookingRules } from "@/lib/domain/booking";
 import { getErrandTypes, getLocations } from "@/lib/services/catalog";
-import { getPublicCompanion } from "@/lib/services/companions";
+import { splitBookings } from "@/lib/domain/booking-list";
+import { listBookings } from "@/lib/services/bookings";
+import { getCompanionAvailability, getPublicCompanion } from "@/lib/services/companions";
 import { requireRole } from "@/lib/services/guard";
 import { BookingForm } from "./BookingForm";
 
@@ -17,11 +19,13 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
   const params = await searchParams;
   const companionId = typeof params.companion === "string" ? params.companion : null;
 
-  const [errandTypes, locations, companion] = await Promise.all([
+  const [errandTypes, locations, companion, myBookings] = await Promise.all([
     getErrandTypes(),
     getLocations(),
     companionId ? getPublicCompanion(companionId) : Promise.resolve(null),
+    listBookings({ customerId: profile.id }),
   ]);
+  const availability = companion ? await getCompanionAvailability(companion.id) : [];
 
   const pickupLocations = companion
     ? locations
@@ -83,6 +87,8 @@ export default async function BookPage({ searchParams }: PageProps<"/customer/bo
         maxDate={maxDate}
         earliestStartIso={earliestStart(now).toISOString()}
         defaultStart={defaultStart(now)}
+        activeBookings={splitBookings(myBookings, now).upcoming.map((b) => ({ startsAt: b.starts_at, endsAt: b.ends_at }))}
+        availability={availability.map(({ day_of_week, start_time, end_time }) => ({ day_of_week, start_time, end_time }))}
       />
     </>
   );

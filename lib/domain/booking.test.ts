@@ -172,6 +172,21 @@ describe("availableActions", () => {
     expect(availableActions(booking(), { id: "cus-2", role: "customer" }, now)).toEqual([]);
   });
 
+  it("offers to reopen a rejected request as an open one before the deadline (A5)", () => {
+    expect(availableActions(booking({ status: "rejected", startsAt: hours(3) }), customer, now)).toEqual(["reopen"]);
+    expect(availableActions(booking({ status: "rejected", startsAt: hours(1) }), customer, now)).toEqual([]);
+    expect(availableActions(booking({ status: "rejected", reopenedAs: "b-2" }), customer, now)).toEqual([]);
+    expect(availableActions(booking({ status: "rejected" }), companion, now)).toEqual([]);
+  });
+
+  it("offers reopen only when someone else cancelled", () => {
+    const cancelled = (cancelledBy: string | null) => booking({ status: "cancelled", cancelledBy });
+    expect(availableActions(cancelled(companion.id), customer, now)).toEqual(["reopen"]);
+    expect(availableActions(cancelled(admin.id), customer, now)).toEqual(["reopen"]);
+    expect(availableActions(cancelled(customer.id), customer, now)).toEqual([]);
+    expect(availableActions(cancelled(null), customer, now)).toEqual([]);
+  });
+
   it("lets admins cancel any active booking but not finished ones", () => {
     expect(availableActions(booking({ status: "in_progress" }), admin, now)).toEqual(["cancel"]);
     expect(availableActions(booking({ status: "completed" }), admin, now)).toEqual([]);

@@ -30,6 +30,8 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
       startsAt,
       endsAt,
       hasReview: booking.review !== null,
+      cancelledBy: booking.cancelled_by,
+      reopenedAs: booking.reopened_as,
     },
     viewer,
     now,
@@ -38,6 +40,9 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
   const viewerIsCustomer = viewer.id === booking.customer_id;
   const viewerIsCompanion = viewer.id === booking.companion_id;
   const overFinish = booking.status === "in_progress" && now.getTime() >= endsAt.getTime();
+  const endedByOthers =
+    booking.status === "rejected" ||
+    (booking.status === "cancelled" && booking.cancelled_by !== null && booking.cancelled_by !== booking.customer_id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,8 +104,29 @@ export function BookingDetailView({ booking, viewer, now, justCreated = false }:
             เลยเวลาสิ้นสุดที่จองไว้แล้ว ถ้าบริการเสร็จแล้วแต่ผู้ช่วยยังไม่กดจบงาน คุณยืนยันเองได้ แล้วให้คะแนนผู้ช่วยต่อ
           </p>
         )}
-        {booking.status === "cancelled" && booking.cancel_reason && (
+        {(booking.status === "cancelled" || booking.status === "rejected") && booking.cancel_reason && (
           <p className="rounded-control bg-beni-bg px-4 py-3 text-beni">เหตุผล: {booking.cancel_reason}</p>
+        )}
+        {endedByOthers && viewerIsCustomer && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control bg-sora-50 px-4 py-3">
+            <p className="text-sumi">
+              {booking.reopened_as
+                ? "คุณเปิดนัดนี้เป็นคำขอให้ผู้ช่วยคนอื่นแล้ว"
+                : actions.includes("reopen")
+                  ? "ยังมีเวลาหาผู้ช่วยคนใหม่ กด “เปิดเป็นคำขอให้ผู้ช่วยคนอื่น” เพื่อใช้ข้อมูลเดิมทั้งหมด หรือเลือกผู้ช่วยเองจากหน้าค้นหา"
+                  : "หากยังต้องการผู้ช่วย จองใหม่หรือเลือกผู้ช่วยจากหน้าค้นหาได้เลย"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {booking.reopened_as ? (
+                <ButtonLink href={`/customer/bookings/${booking.reopened_as}`}>ดูคำขอใหม่</ButtonLink>
+              ) : (
+                !actions.includes("reopen") && <ButtonLink href="/customer/book">จองใหม่</ButtonLink>
+              )}
+              <ButtonLink href="/companions" variant="secondary">
+                ค้นหาผู้ช่วย
+              </ButtonLink>
+            </div>
+          </div>
         )}
         <BookingActions bookingId={booking.id} actions={actions} viewerRole={viewer.role} />
       </Card>

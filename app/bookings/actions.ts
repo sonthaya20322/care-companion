@@ -18,6 +18,7 @@ const allowedRoles = {
   review: ["customer"],
   no_show: ["customer"],
   confirm_complete: ["customer"],
+  reopen: ["customer"],
 } as const;
 
 export async function bookingAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -36,6 +37,16 @@ export async function bookingAction(_prev: ActionState, formData: FormData): Pro
   }
 
   const supabase = await createClient();
+
+  if (input.action === "reopen") {
+    const { data, error } = await supabase.rpc("reopen_booking", { p_booking_id: input.bookingId });
+    if (error) {
+      console.error("booking action failed", { action: input.action, code: error.code });
+      return { message: toUserMessage(error) };
+    }
+    redirect(`/customer/bookings/${data as string}?created=1`);
+  }
+
   const { error } = await (() => {
     switch (input.action) {
       case "accept":
